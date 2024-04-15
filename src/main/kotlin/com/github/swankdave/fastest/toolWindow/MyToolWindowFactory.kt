@@ -1,5 +1,6 @@
 package com.github.swankdave.fastest.toolWindow
 
+import com.github.swankdave.fastest.MyBundle
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -8,7 +9,6 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
-import com.github.swankdave.fastest.MyBundle
 import com.github.swankdave.fastest.services.MyProjectService
 import javax.swing.JButton
 

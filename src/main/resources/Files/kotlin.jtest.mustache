@@ -1,0 +1,63 @@
+/* This file is output by shortTest as a translation of inline test shorthand.
+* THIS FILE WILL BE OVERWRITTEN WITHOUT WARNING.
+* You have been warned */
+
+package {{package_name}}.{{testNamespace}};
+import {{class_fqname}};
+import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+
+class {{className}}test {
+
+    {{{testDeclaration}}}
+
+    {{#testSetup}}
+        @BeforeEach
+        fun setUp() {
+        {{{testSetup}}}
+        }
+
+    {{/testSetup}}
+    {{#testTeardown}}
+        @AfterEach
+        fun tearDown() {
+        {{{testTeardown}}}
+        }
+
+    {{/testTeardown}}
+    {{#methodList}}
+        {{#testList}}
+            /*
+            {{^testDoc}}
+                * Ensuring {{{testMethodName}}}{{{predicate}}} {{#exceptionTest}}throws{{/exceptionTest}}{{^exceptionTest}}results in{{/exceptionTest}} {{{result}}}
+            {{/testDoc}}
+            {{#testDoc}}
+                {{{testDoc}}}
+            {{/testDoc}}
+            */
+            @Test
+            fun {{testName}}(){
+            {{#testPreamble}}
+                {{{testPreamble}}}
+            {{/testPreamble}}
+            {{^testPreamble}}
+                {{^isStatic}}
+                    val article = {{{className}}}{{#constructor}}{{{constructor}}}{{/constructor}}{{^constructor}}(){{/constructor}}
+                {{/isStatic}}
+            {{/testPreamble}}
+            {{#exceptionTest}}
+                assertThrows<{{{result}}}>{{#errorMessage}}("{{{errorMessage}}}"){{/errorMessage}}{
+                    {{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
+                }
+            {{/exceptionTest}}
+            {{^exceptionTest}}
+                assertEquals(
+                {{{result}}},
+                {{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
+                {{#errorMessage}},"{{{errorMessage}}}"{{/errorMessage}})
+            {{/exceptionTest}}
+            }
+        {{/testList}}
+    {{/methodList}}
+}

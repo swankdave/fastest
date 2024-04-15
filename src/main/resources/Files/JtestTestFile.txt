@@ -1,0 +1,40 @@
+
+("Shor","Test") => "ShorTest" # simple tests should be simple to write!
+
+(1,2) => 3
+
+("this_gets_passed_to_the_constructor") (2,3) => 5 // this comment text is printed if the test fails
+
+//comments before a test will be put in the comments above the test declaration
+System.out.print("lines without '=>' will be included in subsequent tests (persistent");
+var article = new Demo1(); //including setup code turns off default constructor generation
+(1,1) => 2
+System.out.print("we can also add (persistent) lines to run after the test");
+
+System.out.print("this will be in the setup for the next test, but not the previous");
+persistenceDemo  (1) (1,1) => 2 //math fail
+
+ persistence (1) (1,1) => 2 #math fail
+
+System.out.print("double blank lines reset persistence");
+var article = new Demo1();
+(-1,1) => (RuntimeException)EX //tests are automatically converted to expect exceptions
+
+('a','b')=>'c'
+
+static_method_test (1,2) => -1 //tests automatically transform to handle static methods
+
+
+//SETs allow us to create multiple tests using inner and outer joins
+//identifiers (...)SET and (...)SET[A-Z] indicate different groupings of values to be used to create multiple tests
+//sets with the same identifier will be joined 1-1 in order
+//sets with different identifiers will be full joined
+( (A,B)SET ) => (1,2)SET #will generate 2 tests (A)=>1, (B)=>2
+
+( (A,B)SETA, (1,2)SETB ) => 0 #will generate 4 tests: (A,1)=>0, (A,2)=>0, (B,1)=>0, (B,2)=>0
+
+( (A,B)SETA, (1,2)SETB ) => (0,1)SETA #will generate 4 tests: (A,1)=>0, (A,2)=>0, (B,1)=>1, (B,2)=>1
+
+
+//GEN_SET can be treated just like set, but allows us to identify enumerations as our input sets
+((COLORS)GEN_SET) => 0 # will generate (COLORS.RED)=>0, (COLORS.BLUE)=>0 ...

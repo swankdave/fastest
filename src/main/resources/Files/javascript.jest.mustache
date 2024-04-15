@@ -1,0 +1,56 @@
+/* This file is output by shortTest as a translation of inline test shorthand.
+* THIS FILE WILL BE OVERWRITTEN WITHOUT WARNING.
+* You have been warned */
+
+import { {{className}} } from {{class_fqname}}
+
+    {{{testDeclaration}}}
+
+    {{#testSetup}}
+        beforeEach(() => {
+        {{{testSetup}}}
+        })
+
+    {{/testSetup}}
+    {{#testTeardown}}
+        afterEach(() => {
+        {{{testTeardown}}}
+        })
+
+    {{/testTeardown}}
+    {{#methodList}}
+        {{#testList}}
+            /*
+            {{^testDoc}}
+                * Ensuring {{{testMethodName}}}{{{predicate}}} {{#exceptionTest}}throws{{/exceptionTest}}{{^exceptionTest}}results in{{/exceptionTest}} {{{result}}}
+            {{/testDoc}}
+            {{#testDoc}}
+                {{{testDoc}}}
+            {{/testDoc}}
+            */
+            {{#errorMessage}}
+            describe("if this test fails then: {{{errorMessage}}}", ()=>{
+            {{/errorMessage}}
+            test("{{testName}}", () => {
+            {{#testPreamble}}
+                {{{testPreamble}}}
+            {{/testPreamble}}
+            {{^testPreamble}}
+                {{^isStatic}}
+                    var article = new {{{className}}}{{#constructor}}{{{constructor}}}{{/constructor}}{{^constructor}}(){{/constructor}}
+                {{/isStatic}}
+            {{/testPreamble}}
+            {{#exceptionTest}}
+                expect({{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}))
+                .toThrow({{{result}}})
+            {{/exceptionTest}}
+            {{^exceptionTest}}
+                expect({{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}})
+                .tobe({{{result}}})
+            {{/exceptionTest}}
+            })
+            {{#errorMessage}}
+            })
+            {{/errorMessage}}
+        {{/testList}}
+    {{/methodList}}

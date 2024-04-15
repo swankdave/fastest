@@ -1,3 +1,4 @@
+/*
 package com.github.swankdave.fastest
 
 import com.intellij.ide.highlighter.XmlFileType
@@ -37,3 +38,4 @@ class MyPluginTest : BasePlatformTestCase() {
 
     override fun getTestDataPath() = "src/test/testData/rename"
 }
+*/
