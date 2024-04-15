@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 
 public class ShorTestListener extends ShorTestBaseListener {
     private final ArrayList<TestInstance> testList;
-    private int testIndex = 0;
+    private int testIndex;
     private TestConfig config;
     private boolean postTest = false;
-    private HashMap<String,HashMap<String,ArrayList<String>>> sets;
+    private final HashMap<String,HashMap<String,ArrayList<String>>> sets;
     private boolean preCode=true;
 
     private String getFUllText(ParserRuleContext ctx){
@@ -44,7 +44,7 @@ public class ShorTestListener extends ShorTestBaseListener {
                 tests = tests.stream().flatMap(cfg -> {
                     var rtn = new LinkedList<TestConfig>();
                     var setLiterals = setGroup.keySet().stream().filter(cfg::containsLiteral).collect(Collectors.toList());
-                    if (setLiterals.size() > 0) {
+                    if (!setLiterals.isEmpty()) {
                         for (int i = 0; i < setGroup.get(setLiterals.get(0)).size(); i++) {
                             var newTest = new TestConfig(cfg);
                             newTest.testIndex = testIndex+i;
@@ -262,7 +262,7 @@ public class ShorTestListener extends ShorTestBaseListener {
 
 
     /**
-     * @param node
+     * @param node node where error was found
      */
     @Override
     public void visitErrorNode(ErrorNode node) {

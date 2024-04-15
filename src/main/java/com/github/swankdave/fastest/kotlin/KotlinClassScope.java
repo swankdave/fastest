@@ -63,7 +63,6 @@ public class KotlinClassScope extends ClassScope {
         return getPsiClass().getChildren(TokenSet.create(KtStubElementTypes.CLASS_BODY))[0];
     }
 
-    @NotNull
     @Override
     protected String getFunctionName(ASTNode node){
         return ((KtNamedFunction)node.getPsi()).getName();
@@ -77,7 +76,7 @@ public class KotlinClassScope extends ClassScope {
     public KotlinClassScope(PsiFile psiFile) {
         super(psiFile);
         for (var obj: getStrongClass().getCompanionObjects())
-            for (var function: obj.getBody().getFunctions())
+            for (var function: Objects.requireNonNull(obj.getBody()).getFunctions())
                 methodList.add(new KotlinMethodScope(function.getNode(),getFunctionName(function.getNode()), getTestCount(getFunctionName(function.getNode()))));
     }
 }

@@ -110,8 +110,8 @@ public abstract class ClassScope implements IProvideScope {
                 put(Constants.METHOD_LIST, methodList.stream().map(MethodScope::getScopes).toArray());
             }
         };
+        //noinspection StatementWithEmptyBody
         while (scopes.values().remove(null));
-
         return scopes;
     }
 }

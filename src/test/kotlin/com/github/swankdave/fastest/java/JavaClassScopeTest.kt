@@ -12,7 +12,7 @@ class JavaClassScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
+        )
     }
 
     fun testDoesNotCrashIfEmptyClassDocumentation(){
@@ -25,7 +25,7 @@ class JavaClassScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
+        )
     }
 
     fun testBasicInitialization(){
@@ -45,8 +45,8 @@ class JavaClassScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
-        assert(classScope.className=="JavaTestClass"){"class name is wrong"};
+        )
+        assert(classScope.className=="JavaTestClass"){"class name is wrong"}
         assert(classScope.testDeclaration.contains("int i;")){"test Declaration Missing"}
         assert(classScope.testSetup.contains("System.out.print(\"Class Test Setup\");")){"testSetup is missing"}
         assert(classScope.testTeardown.contains("System.out.print(\"Class Test Teardown\");")){"testTeardown is missing"}

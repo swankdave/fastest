@@ -14,7 +14,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
+        )
     }
 
     fun testDoesNotCrashIfEmptyMethodDocumentation(){
@@ -27,7 +27,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
+        )
     }
 
     fun testDiscoverStaticMethod(){
@@ -46,7 +46,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.IS_STATIC)) { "failed to detect static method" }
     }
 
@@ -65,7 +65,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(!methodScope.tests[0].scopes.containsKey(Constants.IS_STATIC)) { "failed to detect non-static method" }
     }
 
@@ -86,7 +86,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.TEST_DOC)) { "failed to detect test documentation" }
         assert((methodScope.tests[0].scopes[Constants.TEST_DOC]).toString().contains("This explains what the test is doing")){"incorrect test documentation"}
     }
@@ -108,7 +108,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.TEST_PREAMBLE)) { "failed to detect test preamble" }
         assert((methodScope.tests[0].scopes[Constants.TEST_PREAMBLE]).toString().contains("String s = \"This is setup for the test\"")){"incorrect test preamble "}
     }
@@ -129,7 +129,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.TEST_NAME)) { "failed to detect test name" }
         assert((methodScope.tests[0].scopes[Constants.TEST_NAME]).toString().contains("demotest")){"incorrect testName "}
     }
@@ -150,7 +150,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.TEST_NAME)) { "failed to detect test name" }
         assert((methodScope.tests[0].scopes[Constants.TEST_NAME]).toString().contains("demotest")){"incorrect testName "}
         assert(methodScope.tests[1].scopes.containsKey(Constants.TEST_NAME)) { "failed to detect test name" }
@@ -173,7 +173,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.CONSTRUCTOR)) { "failed to detect test object constructor" }
         assert(methodScope.tests[0].scopes[Constants.CONSTRUCTOR].toString().contains("()")) {"incorrect test object constructor detected"}
     }
@@ -194,7 +194,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.PREDICATE)) { "failed to detect test predicate" }
         assert(methodScope.tests[0].scopes[Constants.PREDICATE].toString().contains("(\"Shor\",\"Test\")")) {"incorrect test predicate detected"}
     }
@@ -215,7 +215,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.TEST_METHOD_NAME)) { "failed to detect name of method under test" }
         assert(methodScope.tests[0].scopes[Constants.TEST_METHOD_NAME].toString().contains("myTest")) {"incorrect name of method under test"}
     }
@@ -236,7 +236,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(!methodScope.tests[0].scopes.containsKey(Constants.EXCEPTION_TEST)) { "incorrectly identified exception test" }
     }
 
@@ -256,7 +256,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.EXCEPTION_TEST)) { "failed to detect exception test" }
     }
 
@@ -276,7 +276,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.RESULT)) { "failed to detect expected test result" }
         assert(methodScope.tests[0].scopes[Constants.RESULT].toString().contains("ShorTest" )) {"incorrect detected expected test result"}
     }
@@ -297,7 +297,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.ERROR_MESSAGE)) { "failed to detect custom error message" }
         assert(methodScope.tests[0].scopes[Constants.ERROR_MESSAGE].toString().contains("custom error message" )) {"incorrect custom error message detected"}
     }
@@ -319,7 +319,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert((methodScope.tests[0].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for the test\"")){"incorrect test postamble "}
     }
@@ -342,7 +342,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.TEST_PREAMBLE)) { "failed to detect test preamble" }
         assert((methodScope.tests[1].scopes[Constants.TEST_PREAMBLE]).toString().contains("String s = \"This is setup for the test\"")){"incorrect test preamble "}
     }
@@ -368,7 +368,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.TEST_PREAMBLE)) { "failed to detect test preamble" }
         assert(!(methodScope.tests[1].scopes[Constants.TEST_PREAMBLE]).toString().contains("String s = \"This is setup for the test\"")){"incorrect test preamble "}
     }
@@ -395,7 +395,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.TEST_PREAMBLE)) { "failed to detect test preamble" }
         assert(!(methodScope.tests[1].scopes[Constants.TEST_PREAMBLE]).toString().contains("String s = \"This is setup for another test\"")){"incorrect test preamble "}
     }
@@ -418,7 +418,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert((methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for the test\"")){"incorrect test postamble "}
     }
@@ -444,7 +444,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert(!(methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for the test\"")){"incorrect test postamble "}
     }
@@ -469,7 +469,7 @@ class KotlinMethodScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        ).methodList[0];
+        ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert((methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for another test\"")){"incorrect test postamble "}
     }

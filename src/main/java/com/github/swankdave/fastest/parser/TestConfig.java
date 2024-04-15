@@ -43,6 +43,7 @@ public class TestConfig {
         postTest = config.postTest;
         isStatic = config.isStatic;
         testIndex = config.testIndex;
+        containsSet = config.containsSet;
     }
 
     public boolean isValid() {

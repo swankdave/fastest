@@ -44,6 +44,7 @@ public class TestInstance implements IProvideScope {
                 put(Constants.POST_TEST, config.postTest);
             }
         };
+        //noinspection StatementWithEmptyBody
         while (map.values().remove(null));
         return map;
     }

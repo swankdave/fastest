@@ -13,7 +13,7 @@ class KotlinClassScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
+        )
     }
 
     fun testDoesNotCrashIfEmptyClassDocumentation(){
@@ -26,7 +26,7 @@ class KotlinClassScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
+        )
     }
 
     fun testBasicInitialization(){
@@ -46,8 +46,8 @@ class KotlinClassScopeTest: BasePlatformTestCase()  {
                 }
             """.trimIndent()
             )
-        );
-        assert(classScope.className=="KotlinTestClass"){"class name is wrong"};
+        )
+        assert(classScope.className=="KotlinTestClass"){"class name is wrong"}
         assert(classScope.testDeclaration.contains("val i = 0")){"test Declaration Missing"}
         assert(classScope.testSetup.contains("print(\"Class Test Setup\")")){"testSetup is missing"}
         assert(classScope.testTeardown.contains("print(\"Class Test Teardown\")")){"testTeardown is missing"}
