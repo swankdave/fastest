@@ -14,13 +14,18 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -70,9 +75,7 @@ public class PopupDialogAction extends AnAction {
       FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
       Editor selectedTextEditor = fileEditorManager.getSelectedTextEditor();
       VirtualFile file = fileEditorManager.getSelectedFiles()[0];
-
-      var testDir = Paths.get(file.getPath()).getParent().resolve(Constants.TEST_NAMESPACE);
-      var targetFilePath = testDir.resolve(testDir + "/" + file.getNameWithoutExtension() + "test.shortest." + file.getExtension());
+      String testFileName = file.getNameWithoutExtension() + "test.shortest." + file.getExtension();
 
       if (selectedTextEditor != null) {
         var psiFile = PsiManager.getInstance(project).findFile(file);
@@ -88,20 +91,30 @@ public class PopupDialogAction extends AnAction {
         try (InputStream resourceAsStream =
                      getClass().getClassLoader().getResourceAsStream(classScope.getMustacheTemplateFilename())) {
           assert resourceAsStream != null : "failed to load template file";
-          var mustacheInstance = new DefaultMustacheFactory().compile(new InputStreamReader(resourceAsStream), "root");
 
-          assert testDir.toFile().exists() || testDir.toFile().mkdir() : "Failed to create directory, probably something to do with file permissions surrounding a test directory";
-          assert !targetFilePath.toFile().exists() || targetFilePath.toFile().delete() : "failed to delete existing output file";
-          assert targetFilePath.toFile().createNewFile() : "failed to create output file";
+          try (StringWriter writer = new StringWriter()) {
+            String output;
+            new DefaultMustacheFactory()
+                    .compile(new InputStreamReader(resourceAsStream), "root")
+                    .execute(writer, classScope.getScopes());
+            output = writer.toString();
 
-          try (FileOutputStream out = new FileOutputStream(targetFilePath.toString())) {
-            try (PrintWriter testFile = new PrintWriter(out)) {
-              mustacheInstance.execute(testFile, classScope.getScopes());
-              testFile.flush();
-            }
-            out.flush();
+
+            var vTestDir = file.getParent().findChild(Constants.TEST_NAMESPACE);
+            if (vTestDir == null)
+              vTestDir = file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE);
+
+            var vTestFile = vTestDir.findChild(testFileName);
+            vTestFile.delete(this);
+            vTestFile = vTestDir.createChildData(this, testFileName);
+
+            var vTestFileStream = vTestFile.getOutputStream(this);
+            vTestFileStream.write(output.getBytes());
+            vTestFileStream.flush();
+            vTestFileStream.close();
+
+            fileEditorManager.openFile(vTestFile, true);
           }
-
         } catch (IOException e) {
           Project currentProject = event.getProject();
           Messages.showMessageDialog(currentProject, e.getMessage(), "Oops", Messages.getErrorIcon());

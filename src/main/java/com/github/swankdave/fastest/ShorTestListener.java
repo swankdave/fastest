@@ -33,8 +33,6 @@ public class ShorTestListener extends ShorTestBaseListener {
     }
 
     private void addTestToList() {
-        //TODO: process test sets
-
         List<TestConfig> tests = new LinkedList<>();
         tests.add(new TestConfig(config));
 
@@ -43,7 +41,7 @@ public class ShorTestListener extends ShorTestBaseListener {
                 HashMap<String, ArrayList<String>> setGroup = entry.getValue();
                 tests = tests.stream().flatMap(cfg -> {
                     var rtn = new LinkedList<TestConfig>();
-                    var setLiterals = setGroup.keySet().stream().filter(cfg::containsLiteral).collect(Collectors.toList());
+                    var setLiterals = (setGroup.keySet().stream().filter(cfg::containsLiteral)).toList();
                     if (!setLiterals.isEmpty()) {
                         for (int i = 0; i < setGroup.get(setLiterals.get(0)).size(); i++) {
                             var newTest = new TestConfig(cfg);
@@ -206,7 +204,6 @@ public class ShorTestListener extends ShorTestBaseListener {
                 map.put(setDefinition,new ArrayList<>());
             var list = map.get(setDefinition);
             list.clear();
-            list.add(getFUllText(parameterList));
             list.addAll(parameterList.parameter().stream().map(this::getFUllText).collect(Collectors.toList()));
         }
 
