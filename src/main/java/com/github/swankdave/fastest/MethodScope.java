@@ -14,13 +14,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class MethodScope implements IProvideScope {
+    private final ClassScope classScope;
     public String methodName;
     protected boolean isStatic = false;
     protected boolean hasData = false;
     protected List<TestInstance> tests;
     protected ShorTestListener listener;
+    protected Map<String, String> testFragments;
 
     protected abstract TokenSet getDocFilter();
 
@@ -38,6 +41,10 @@ public abstract class MethodScope implements IProvideScope {
         return childByType != null && childByType.getText().contains("static");
     }
 
+    public Map<String, String> getTestFragments() {
+        return testFragments;
+    }
+
     public List<TestInstance> getTests() {
         return tests;
     }
@@ -52,9 +59,11 @@ public abstract class MethodScope implements IProvideScope {
         }};
     }
 
-    public MethodScope(@NotNull ASTNode method, String methodName, int testNumber) {
+    public MethodScope(ClassScope classScope, @NotNull ASTNode method, String methodName, int testNumber) {
+        this.classScope = classScope;
         tests = new ArrayList<>();
         String docBlock = Util.getSection(Util.TestSections.test, getDocForMethod(method));
+        testFragments = Util.getNamedFragments(getDocForMethod(method));
 
         if (docBlock.isEmpty())
             return;
@@ -68,7 +77,7 @@ public abstract class MethodScope implements IProvideScope {
             CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
             ShorTestParser parser = new ShorTestParser(commonTokenStream);
             var tree = parser.start();
-            listener = new ShorTestListener(methodName, isStatic, testNumber);
+            listener = new ShorTestListener(classScope, this, methodName, isStatic, testNumber);
             org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, tree);
 
             tests = listener.getTestList();

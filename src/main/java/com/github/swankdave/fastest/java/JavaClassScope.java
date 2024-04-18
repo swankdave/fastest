@@ -65,8 +65,8 @@ public class JavaClassScope extends ClassScope implements IProvideScope {
 
     @NotNull
     @Override
-    protected MethodScope getFunctionScope(ASTNode method){
-        return new JavaMethodScope(method, getFunctionName(method), getTestCount(getFunctionName(method)));
+    protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method){
+        return new JavaMethodScope(classScope, method, getFunctionName(method), getTestCount(getFunctionName(method)));
     }
 
     public JavaClassScope(PsiFile psiFile) {

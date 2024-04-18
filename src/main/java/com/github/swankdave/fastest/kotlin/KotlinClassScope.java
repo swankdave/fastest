@@ -17,6 +17,8 @@ import java.util.Objects;
 
 
 public class KotlinClassScope extends ClassScope {
+    private ClassScope classScope;
+
     @Override
     public String getMustacheTemplateFilename() {
         return "Files/kotlin.jtest.mustache";
@@ -67,16 +69,18 @@ public class KotlinClassScope extends ClassScope {
     protected String getFunctionName(ASTNode node){
         return ((KtNamedFunction)node.getPsi()).getName();
     }
+
     @NotNull
     @Override
-    protected MethodScope getFunctionScope(ASTNode method){
-        return new KotlinMethodScope(method, getFunctionName(method), getTestCount(getFunctionName(method)));
+    protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method){
+        this.classScope = classScope;
+        return new KotlinMethodScope(classScope, method, getFunctionName(method), getTestCount(getFunctionName(method)));
     }
 
     public KotlinClassScope(PsiFile psiFile) {
         super(psiFile);
         for (var obj: getStrongClass().getCompanionObjects())
             for (var function: Objects.requireNonNull(obj.getBody()).getFunctions())
-                methodList.add(new KotlinMethodScope(function.getNode(),getFunctionName(function.getNode()), getTestCount(getFunctionName(function.getNode()))));
+                methodList.add(new KotlinMethodScope(classScope, function.getNode(),getFunctionName(function.getNode()), getTestCount(getFunctionName(function.getNode()))));
     }
 }

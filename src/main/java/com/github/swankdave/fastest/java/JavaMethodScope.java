@@ -1,5 +1,6 @@
 package com.github.swankdave.fastest.java;
 
+import com.github.swankdave.fastest.ClassScope;
 import com.github.swankdave.fastest.IProvideScope;
 import com.github.swankdave.fastest.MethodScope;
 import com.intellij.lang.ASTNode;
@@ -22,7 +23,7 @@ public class JavaMethodScope extends MethodScope implements IProvideScope {
         return TokenSet.create(JavaStubElementTypes.MODIFIER_LIST);
     }
 
-    public JavaMethodScope(@NotNull ASTNode method, String methodName, int testNumber) {
-        super(method,methodName,testNumber);
+    public JavaMethodScope(ClassScope classScope, @NotNull ASTNode method, String methodName, int testNumber) {
+        super(classScope, method,methodName,testNumber);
     }
 }

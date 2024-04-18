@@ -14,7 +14,7 @@ test_name:
 constructor
     : ballanced_parenthesis_statement;
 predicate
-    : ballanced_parenthesis_statement;
+    : ballanced_parenthesis_statement anything_but_newline_or_ruletoken*;
 result
     : parameter
     | ballanced_parenthesis_statement

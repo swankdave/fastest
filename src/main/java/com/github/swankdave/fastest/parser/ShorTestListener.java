@@ -28,12 +28,12 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitSetup(ShorTestParser.SetupContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ShorTestParser#rule_()}.
+	 * Enter a parse tree produced by {@link ShorTestParser#rule}.
 	 * @param ctx the parse tree
 	 */
 	void enterRule(ShorTestParser.RuleContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ShorTestParser#rule_()}.
+	 * Exit a parse tree produced by {@link ShorTestParser#rule}.
 	 * @param ctx the parse tree
 	 */
 	void exitRule(ShorTestParser.RuleContext ctx);

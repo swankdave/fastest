@@ -9,23 +9,22 @@ import com.github.swankdave.fastest.kotlin.KotlinClassScope;
 import com.github.swankdave.fastest.typescript.TypescriptClassScope;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorModificationUtil;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.codeStyle.CodeStyleManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -92,29 +91,28 @@ public class PopupDialogAction extends AnAction {
                      getClass().getClassLoader().getResourceAsStream(classScope.getMustacheTemplateFilename())) {
           assert resourceAsStream != null : "failed to load template file";
 
+          var vTestDir = file.getParent().findChild(Constants.TEST_NAMESPACE);
+          vTestDir = vTestDir != null ? vTestDir : file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE);
+          var vTestFile = vTestDir.findChild(testFileName);
+          vTestFile = vTestFile != null ? vTestFile: vTestDir.createChildData(this, testFileName);
+
+          PsiFile pTestFile = PsiManager.getInstance(project).findFile(vTestFile);
+          var testDocument = PsiDocumentManager.getInstance(project)
+                  .getDocument(Objects.requireNonNull(pTestFile));
+
           try (StringWriter writer = new StringWriter()) {
-            String output;
             new DefaultMustacheFactory()
                     .compile(new InputStreamReader(resourceAsStream), "root")
                     .execute(writer, classScope.getScopes());
-            output = writer.toString();
-
-
-            var vTestDir = file.getParent().findChild(Constants.TEST_NAMESPACE);
-            if (vTestDir == null)
-              vTestDir = file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE);
-
-            var vTestFile = vTestDir.findChild(testFileName);
-            vTestFile.delete(this);
-            vTestFile = vTestDir.createChildData(this, testFileName);
-
-            var vTestFileStream = vTestFile.getOutputStream(this);
-            vTestFileStream.write(output.getBytes());
-            vTestFileStream.flush();
-            vTestFileStream.close();
-
-            fileEditorManager.openFile(vTestFile, true);
+              WriteCommandAction.runWriteCommandAction(project,"generate test code", "", () -> {
+                testDocument.setReadOnly(false);
+                testDocument.setText(writer.toString());
+                PsiDocumentManager.getInstance(project).commitDocument(testDocument);
+                CodeStyleManager.getInstance(project).reformat(pTestFile, true);
+              }, pTestFile);
           }
+
+          fileEditorManager.openFile(vTestFile, true);
         } catch (IOException e) {
           Project currentProject = event.getProject();
           Messages.showMessageDialog(currentProject, e.getMessage(), "Oops", Messages.getErrorIcon());

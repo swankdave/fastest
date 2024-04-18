@@ -15,6 +15,7 @@ public abstract class ClassScope implements IProvideScope {
     protected String testDeclaration;
     protected String testSetup;
     protected String testTeardown;
+    protected Map<String, String> testFragments;
     protected List<MethodScope> methodList;
     protected PsiFile psiFile;
 
@@ -36,6 +37,10 @@ public abstract class ClassScope implements IProvideScope {
         return methodList;
     }
 
+    public Map<String, String> getTestFragments() {
+        return testFragments;
+    }
+
     protected Integer getTestCount(String methodName) {
         return methodList.stream()
                 .filter(m -> Objects.equals(m.methodName, methodName))
@@ -55,7 +60,7 @@ public abstract class ClassScope implements IProvideScope {
     @NotNull
     abstract protected String getPackageName();
     @NotNull
-    abstract protected MethodScope getFunctionScope(ASTNode method);
+    abstract protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method);
     @NotNull
     abstract protected String getFunctionName(ASTNode node);
 
@@ -90,10 +95,12 @@ public abstract class ClassScope implements IProvideScope {
         testDeclaration = getSection(Util.TestSections.testDeclaration, classDocBlock);
         testSetup = getSection(Util.TestSections.testSetup, classDocBlock);
         testTeardown = getSection(Util.TestSections.testTeardown, classDocBlock);
+        testFragments = Util.getNamedFragments(classDocBlock);
+
 
         methodList = new ArrayList<>();
         for (var m: getPsiClassBody().getChildren(getFunctionFilter()))
-            methodList.add(getFunctionScope(m));
+            methodList.add(getFunctionScope(this, m));
     }
 
     @NotNull

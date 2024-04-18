@@ -1,5 +1,7 @@
 package com.github.swankdave.fastest.parser;
 
+import com.github.swankdave.fastest.Util;
+
 public class TestConfig {
     public final String testMethodName;
     public final Boolean isStatic;
@@ -75,7 +77,6 @@ public class TestConfig {
                 result.contains(setLiteral)||
                 error.contains(setLiteral)||
                 postTest.contains(setLiteral);
-
     }
 
     public void expand(String setLiteral, String replaceWith){
@@ -87,4 +88,10 @@ public class TestConfig {
         error = error.replace(setLiteral,replaceWith);
         postTest = postTest.replace(setLiteral,replaceWith);
     }
+
+    public void format() {
+        testDoc  = Util.setMindent(testDoc, 4);
+        preamble = Util.setMindent(preamble, 8);
+    }
+
 }

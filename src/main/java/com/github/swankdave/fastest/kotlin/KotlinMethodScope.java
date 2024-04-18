@@ -1,5 +1,6 @@
 package com.github.swankdave.fastest.kotlin;
 
+import com.github.swankdave.fastest.ClassScope;
 import com.github.swankdave.fastest.MethodScope;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.tree.TokenSet;
@@ -26,7 +27,7 @@ public class KotlinMethodScope extends MethodScope {
         return method.getTreeParent().getTreeParent().getElementType().toString().equals("OBJECT_DECLARATION");
     }
 
-    public KotlinMethodScope(@NotNull ASTNode method, String methodName, Integer testNumber) {
-        super(method,methodName,testNumber);
+    public KotlinMethodScope(ClassScope classScope, @NotNull ASTNode method, String methodName, Integer testNumber) {
+        super(classScope, method,methodName,testNumber);
     }
 }

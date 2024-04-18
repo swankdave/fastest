@@ -1,5 +1,6 @@
 package com.github.swankdave.fastest.javascript;
 
+import com.github.swankdave.fastest.ClassScope;
 import com.github.swankdave.fastest.IProvideScope;
 import com.github.swankdave.fastest.MethodScope;
 import com.intellij.lang.ASTNode;
@@ -21,7 +22,7 @@ public class JavascriptMethodScope extends MethodScope implements IProvideScope 
         return JSStubElementTypes.ATTRIBUTE_LISTS;
     }
 
-    public JavascriptMethodScope(@NotNull ASTNode method, String methodName, int testNumber) {
-        super(method,methodName,testNumber);
+    public JavascriptMethodScope(ClassScope classScope, @NotNull ASTNode method, String methodName, int testNumber) {
+        super(classScope, method,methodName,testNumber);
     }
 }

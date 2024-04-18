@@ -28,36 +28,38 @@ class {{className}}test {
     {{/testTeardown}}
     {{#methodList}}
         {{#testList}}
-            /*
-            {{^testDoc}}
-                * Ensuring {{{testMethodName}}}{{{predicate}}} {{#exceptionTest}}throws{{/exceptionTest}}{{^exceptionTest}}results in{{/exceptionTest}} {{{result}}}
-            {{/testDoc}}
-            {{#testDoc}}
-                {{{testDoc}}}
-            {{/testDoc}}
-            */
-            @Test
-            fun {{testName}}(){
-            {{#testPreamble}}
-                {{{testPreamble}}}
-            {{/testPreamble}}
-            {{^testPreamble}}
-                {{^isStatic}}
-                    val article = {{{className}}}{{#constructor}}{{{constructor}}}{{/constructor}}{{^constructor}}(){{/constructor}}
-                {{/isStatic}}
-            {{/testPreamble}}
-            {{#exceptionTest}}
-                assertThrows<{{{result}}}>{{#errorMessage}}("{{{errorMessage}}}"){{/errorMessage}}{
-                    {{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
-                }
-            {{/exceptionTest}}
-            {{^exceptionTest}}
-                assertEquals(
-                {{{result}}},
+    /*
+    {{^testDoc}}
+        * Ensuring {{{testMethodName}}}{{{predicate}}} {{#exceptionTest}}throws{{/exceptionTest}}{{^exceptionTest}}results in{{/exceptionTest}} {{{result}}}
+    {{/testDoc}}
+    {{#testDoc}}
+        {{{testDoc}}}
+    {{/testDoc}}
+    */
+        @Test
+        fun {{testName}}(){
+        {{#testPreamble}}
+            {{{testPreamble}}}
+        {{/testPreamble}}
+        {{^testPreamble}}
+            {{^isStatic}}
+                val article = {{{className}}}{{#constructor}}{{{constructor}}}{{/constructor}}{{^constructor}}(){{/constructor}}
+            {{/isStatic}}
+        {{/testPreamble}}
+        {{#exceptionTest}}
+            assertThrows<{{{result}}}>{{#errorMessage}}("{{{errorMessage}}}"){{/errorMessage}}{
                 {{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
-                {{#errorMessage}},"{{{errorMessage}}}"{{/errorMessage}})
-            {{/exceptionTest}}
             }
+        {{/exceptionTest}}
+        {{^exceptionTest}}
+            assertEquals(
+            {{{result}}},
+            {{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
+            {{#errorMessage}},"{{{errorMessage}}}"{{/errorMessage}})
+        {{/exceptionTest}}
+        {{{postTest}}}
+        }
+
         {{/testList}}
     {{/methodList}}
 }

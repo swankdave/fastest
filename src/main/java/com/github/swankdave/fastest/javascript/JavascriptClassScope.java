@@ -66,8 +66,8 @@ public class JavascriptClassScope extends ClassScope {
 
     @NotNull
     @Override
-    protected MethodScope getFunctionScope(ASTNode method){
-        return new JavascriptMethodScope(method, getFunctionName(method), getTestCount(getFunctionName(method)));
+    protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method){
+        return new JavascriptMethodScope(classScope, method, getFunctionName(method), getTestCount(getFunctionName(method)));
     }
 
     public JavascriptClassScope(PsiFile psiFile) {

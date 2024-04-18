@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 public class ShorTestListener extends ShorTestBaseListener {
     private final ArrayList<TestInstance> testList;
+    private final ClassScope classScope;
+    private final MethodScope methodScope;
     private int testIndex;
     private TestConfig config;
     private boolean postTest = false;
@@ -25,15 +27,34 @@ public class ShorTestListener extends ShorTestBaseListener {
 
     }
 
-    public ShorTestListener(String testMethodName, boolean isStatic, int size) {
+    public ShorTestListener(ClassScope classScope, MethodScope methodScope, String testMethodName, boolean isStatic, int size) {
+        this.classScope = classScope;
+        this.methodScope = methodScope;
         config = new TestConfig(testMethodName, isStatic, size -1);
         testIndex = size;
         testList = new ArrayList<>();
         sets = new HashMap<>();
     }
 
+
     private void addTestToList() {
         List<TestConfig> tests = new LinkedList<>();
+
+        while (methodScope.getTestFragments().keySet().stream().anyMatch(config::containsLiteral) ||
+                classScope.getTestFragments().keySet().stream().anyMatch(config::containsLiteral)) {
+
+            if (methodScope.getTestFragments().keySet().stream().anyMatch(config::containsLiteral)) {
+                methodScope.getTestFragments().forEach(config::expand);
+                continue; //because method fragments can refer to each-other, we need to do this until it has no effect
+            }
+
+            if (classScope.getTestFragments().keySet().stream().anyMatch(config::containsLiteral)) {
+                classScope.getTestFragments().forEach(config::expand);
+                continue;
+            }
+            //TODO: Fragments from Namespace and above
+        }
+        config.format();
         tests.add(new TestConfig(config));
 
         if (config.containsSet) {
@@ -41,11 +62,12 @@ public class ShorTestListener extends ShorTestBaseListener {
                 HashMap<String, ArrayList<String>> setGroup = entry.getValue();
                 tests = tests.stream().flatMap(cfg -> {
                     var rtn = new LinkedList<TestConfig>();
+
                     var setLiterals = (setGroup.keySet().stream().filter(cfg::containsLiteral)).toList();
                     if (!setLiterals.isEmpty()) {
                         for (int i = 0; i < setGroup.get(setLiterals.get(0)).size(); i++) {
                             var newTest = new TestConfig(cfg);
-                            newTest.testIndex = testIndex+i;
+                            newTest.testIndex = testIndex + i;
                             int finalI = i;
                             setLiterals.forEach(literal -> newTest.expand(literal, setGroup.get(literal).get(finalI)));
                             rtn.add(newTest);
@@ -58,7 +80,7 @@ public class ShorTestListener extends ShorTestBaseListener {
             preCode=true;
         }
 
-        testList.addAll(tests.stream().map(TestInstance::new).collect(Collectors.toList()));
+        testList.addAll(tests.stream().map(TestInstance::new).toList());
         config.invalidateTest();
         testIndex += 1;
     }
@@ -204,7 +226,7 @@ public class ShorTestListener extends ShorTestBaseListener {
                 map.put(setDefinition,new ArrayList<>());
             var list = map.get(setDefinition);
             list.clear();
-            list.addAll(parameterList.parameter().stream().map(this::getFUllText).collect(Collectors.toList()));
+            list.addAll(parameterList.parameter().stream().map(this::getFUllText).toList());
         }
 
     }
