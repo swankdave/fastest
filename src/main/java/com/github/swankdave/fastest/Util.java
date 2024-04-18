@@ -50,6 +50,10 @@ public class Util {
         return text;
     }
 
+    static String filteredJoin(String delimiter, String[] strings){
+        return Arrays.stream(strings).filter(s -> s!=null && !s.isBlank()).collect(Collectors.joining(delimiter));
+    }
+
     public enum TestSections{
         test,
         testFragment,

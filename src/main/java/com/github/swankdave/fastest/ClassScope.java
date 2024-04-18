@@ -1,6 +1,7 @@
 package com.github.swankdave.fastest;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.tree.TokenSet;
 import org.jetbrains.annotations.NotNull;
@@ -85,22 +86,33 @@ public abstract class ClassScope implements IProvideScope {
         return "";
     }
 
+    private void getNamespaceScope(PsiDirectory directory){
+        if (!directory.getVirtualFile().getPath().equals(directory.getProject().getBasePath()))
+            getNamespaceScope(Objects.requireNonNull(directory.getParentDirectory()));
+        Arrays.stream(directory.getFiles()).filter(f-> f.getName().equalsIgnoreCase("testfragments.txt")).forEach(file->incorporateTestParts(file.getText()));
+    }
+
     public ClassScope(PsiFile psiFile) {
+        testFragments = new HashMap<>();
         this.psiFile = Objects.requireNonNull(psiFile);
         packageName = getPackageName();
         className = getClassName();
         assert !className.endsWith("test") :"this is a test file, bailing";
 
+        getNamespaceScope( psiFile.getContainingDirectory() );
         var classDocBlock = getClassDocBlock();
-        testDeclaration = getSection(Util.TestSections.testDeclaration, classDocBlock);
-        testSetup = getSection(Util.TestSections.testSetup, classDocBlock);
-        testTeardown = getSection(Util.TestSections.testTeardown, classDocBlock);
-        testFragments = Util.getNamedFragments(classDocBlock);
-
+        incorporateTestParts(classDocBlock);
 
         methodList = new ArrayList<>();
         for (var m: getPsiClassBody().getChildren(getFunctionFilter()))
             methodList.add(getFunctionScope(this, m));
+    }
+
+    private void incorporateTestParts(String classDocBlock) {
+        testDeclaration = Util.filteredJoin("\n", new String[]{testDeclaration, getSection(Util.TestSections.testDeclaration, classDocBlock)});
+        testSetup = Util.filteredJoin("\n", new String[]{ testSetup, getSection(Util.TestSections.testSetup, classDocBlock)});
+        testTeardown = Util.filteredJoin("\n", new String[]{testTeardown, getSection(Util.TestSections.testTeardown, classDocBlock)});
+        testFragments.putAll(Util.getNamedFragments(classDocBlock));
     }
 
     @NotNull
