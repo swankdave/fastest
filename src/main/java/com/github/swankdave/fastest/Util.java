@@ -73,6 +73,7 @@ public class Util {
             Arrays.stream(inputBlock.split("\n"))
                 .map(line->{
                     int tabCount = 0;
+                    //noinspection StatementWithEmptyBody
                     while (line.startsWith(" ".repeat(++tabCount))){}
                     return tabCount-1;
                 }).min(Integer::compare).orElse(0);

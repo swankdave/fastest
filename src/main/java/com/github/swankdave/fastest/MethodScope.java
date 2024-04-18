@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class MethodScope implements IProvideScope {
-    private final ClassScope classScope;
     public String methodName;
     protected boolean isStatic = false;
     protected boolean hasData = false;
@@ -60,7 +59,6 @@ public abstract class MethodScope implements IProvideScope {
     }
 
     public MethodScope(ClassScope classScope, @NotNull ASTNode method, String methodName, int testNumber) {
-        this.classScope = classScope;
         tests = new ArrayList<>();
         String docBlock = Util.getSection(Util.TestSections.test, getDocForMethod(method));
         testFragments = Util.getNamedFragments(getDocForMethod(method));

@@ -11,7 +11,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorModificationUtil;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -104,8 +103,8 @@ public class PopupDialogAction extends AnAction {
             new DefaultMustacheFactory()
                     .compile(new InputStreamReader(resourceAsStream), "root")
                     .execute(writer, classScope.getScopes());
-              WriteCommandAction.runWriteCommandAction(project,"generate test code", "", () -> {
-                testDocument.setReadOnly(false);
+              WriteCommandAction.runWriteCommandAction(project, "Generate Test Code", "", () -> {
+                Objects.requireNonNull(testDocument).setReadOnly(false);
                 testDocument.setText(writer.toString());
                 PsiDocumentManager.getInstance(project).commitDocument(testDocument);
                 CodeStyleManager.getInstance(project).reformat(pTestFile, true);
