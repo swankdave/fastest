@@ -6,45 +6,19 @@ import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.tree.TokenSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.kotlin.KtNodeTypes;
-import org.jetbrains.kotlin.kdoc.lexer.KDocTokens;
 import org.jetbrains.kotlin.psi.KtClass;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.psi.KtNamedFunction;
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes;
 
+import java.util.HashMap;
 import java.util.Objects;
 
 
 public class KotlinClassScope extends ClassScope {
-    private ClassScope classScope;
-
-    @Override
-    public String getMustacheTemplateFilename() {
-        return "Files/kotlin.jtest.mustache";
-    }
-
     @NotNull
     @Override
-    protected TokenSet getDocFilter() {
-        return TokenSet.create(KDocTokens.KDOC);
-    }
-
-    @NotNull
-    @Override
-    protected TokenSet getClassFilter() {
-        return TokenSet.create(KtStubElementTypes.CLASS);
-    }
-
-    @NotNull
-    @Override
-    protected TokenSet getFunctionFilter() {
-        return TokenSet.create(KtNodeTypes.FUN);
-    }
-
-    @NotNull
-    @Override
-    protected String getClassName() {
+    public String getClassName() {
         return Objects.requireNonNull(getStrongClass().getName());
     }
 
@@ -55,7 +29,7 @@ public class KotlinClassScope extends ClassScope {
 
     @NotNull
     @Override
-    protected String getPackageName() {
+    public String getPackageName() {
         return ((KtFile)this.psiFile).getPackageFqName().asString();
     }
 
@@ -72,15 +46,14 @@ public class KotlinClassScope extends ClassScope {
 
     @NotNull
     @Override
-    protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method){
-        this.classScope = classScope;
-        return new KotlinMethodScope(classScope, method, getFunctionName(method), getTestCount(getFunctionName(method)));
+    protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method, HashMap<String, Integer> nameMap){
+        return new KotlinMethodScope(classScope, method, getFunctionName(method), nameMap);
     }
 
     public KotlinClassScope(PsiFile psiFile) {
-        super(psiFile);
+        super(psiFile, new KotlinLanguageConfig());
         for (var obj: getStrongClass().getCompanionObjects())
             for (var function: Objects.requireNonNull(obj.getBody()).getFunctions())
-                methodList.add(new KotlinMethodScope(classScope, function.getNode(),getFunctionName(function.getNode()), getTestCount(getFunctionName(function.getNode()))));
+                methodList.add(new KotlinMethodScope(this, function.getNode(),getFunctionName(function.getNode()),nameMap));
     }
 }

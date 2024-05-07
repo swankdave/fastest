@@ -1,7 +1,9 @@
 package com.github.swankdave.fastest.javascript
 
 import com.github.swankdave.fastest.Constants
+import com.github.swankdave.fastest.java.JavaClassScope
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import junit.framework.TestCase
 
 class JavascriptMethodScopeTest: BasePlatformTestCase()  {
 
@@ -472,5 +474,57 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
         ).methodList[0]
         assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert((methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for another test\"")){"incorrect test postamble "}
+    }
+
+    fun testDiscoverTestFragment(){
+        val methodScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+
+                class JavaTestClass{
+                /** 
+                 * @testFragment testfragmentname
+                 *   String s = "This is teardown for the test";
+                 * @test
+                 *   ("Boar","Test") => "BoarTest" 
+                 *   String s = "This is teardown for another test";
+                 */
+                    myTest(a, b){
+                        return a.concat(b);
+                    }
+                }
+            """.trimIndent()
+            )
+        ).methodList[0]
+        assert(methodScope.testFragments.isNotEmpty());
+        assert(methodScope.testData.isEmpty())
+        assert(methodScope.testFragments.contains("testfragmentname"));
+        TestCase.assertFalse(methodScope.testFragments.contains("notTestFragmentName"))
+    }
+
+    fun testDiscoverTestData(){
+        val methodScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+
+                class JavaTestClass{
+                /** 
+                 * @testData testfragmentname
+                 *   String s = "This is teardown for the test";
+                 * @test
+                 *   ("Boar","Test") => "BoarTest" 
+                 *   String s = "This is teardown for another test";
+                 */
+                    myTest(a, b){
+                        return a.concat(b);
+                    }
+                }
+            """.trimIndent()
+            )
+        ).methodList[0]
+        assert(methodScope.testData.isNotEmpty());
+        assert(methodScope.testFragments.isEmpty())
+        assert(methodScope.testData.contains("testfragmentname"));
+        TestCase.assertFalse(methodScope.testData.contains("notTestFragmentName"))
     }
 }

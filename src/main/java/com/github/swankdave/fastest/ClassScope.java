@@ -1,136 +1,154 @@
 package com.github.swankdave.fastest;
 
+import com.github.swankdave.fastest.javadocparser.JavadocLexer;
+import com.github.swankdave.fastest.javadocparser.JavadocParser;
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.NavigatablePsiElement;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.tree.TokenSet;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static com.github.swankdave.fastest.Util.getSection;
-
-public abstract class ClassScope implements IProvideScope {
-    protected String packageName;
-    public String className;
-    protected String testDeclaration;
-    protected String testSetup;
-    protected String testTeardown;
-    protected Map<String, String> testFragments;
+/**
+ * This abstract class represents the scope of a class in the source code.
+ * It extends the {@link Scope} class.
+ */
+public abstract class ClassScope extends Scope {
     protected List<MethodScope> methodList;
-    protected PsiFile psiFile;
+    protected HashMap<String, Integer> nameMap;
+    protected NavigatablePsiElement psiFile;
 
-    public abstract String getMustacheTemplateFilename();
-
-    public String getTestDeclaration() {
-        return testDeclaration;
+    protected Integer getTestCount(String methodName) {
+        return methodList.stream()
+                .filter(m -> Objects.equals(m.getMethodName(), methodName))
+                .map(a -> a.getTests().size())
+                .reduce(0, Integer::sum);
     }
 
-    public String getTestSetup() {
-        return testSetup;
-    }
+    @NotNull
+    public abstract String getClassName();
 
-    public String getTestTeardown() {
-        return testTeardown;
+    @NotNull
+    public abstract String getPackageName();
+
+    @NotNull
+    abstract protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method, HashMap<String, Integer> nameMap);
+
+    @NotNull
+    abstract protected String getFunctionName(ASTNode node);
+
+    @NotNull
+    protected ASTNode getPsiClassBody() {
+        return getPsiClass();
     }
 
     public List<MethodScope> getMethodList() {
         return methodList;
     }
 
-    public Map<String, String> getTestFragments() {
-        return testFragments;
-    }
-
-    protected Integer getTestCount(String methodName) {
-        return methodList.stream()
-                .filter(m -> Objects.equals(m.methodName, methodName))
-                .map(a -> a.getTests().size())
-                .reduce(0, Integer::sum);
-    }
-
-    @NotNull
-    abstract protected TokenSet getDocFilter();
-    @NotNull
-    abstract protected TokenSet getClassFilter();
-    @NotNull
-    abstract protected TokenSet getFunctionFilter();
-
-    @NotNull
-    protected abstract String getClassName();
-    @NotNull
-    abstract protected String getPackageName();
-    @NotNull
-    abstract protected MethodScope getFunctionScope(ClassScope classScope, ASTNode method);
-    @NotNull
-    abstract protected String getFunctionName(ASTNode node);
-
-    @NotNull
-    protected  ASTNode getPsiClassBody() {
-        return getPsiClass();
-    }
-
+    /**
+     * Retrieves the PSI class node.
+     *
+     * @return The PSI class node.
+     * @throws RuntimeException If the class is not found for the file.
+     */
     @NotNull
     protected  ASTNode getPsiClass() {
-        var classList = psiFile.getNode().getChildren(getClassFilter());
+        var classList = psiFile.getNode().getChildren(languageConfig.getClassFilter());
         if (classList.length>0)
             return classList[0];
         throw new RuntimeException("class not found for file "+psiFile.getName());
     }
 
-    @NotNull
-    protected String getClassDocBlock(){
-        var docs = getPsiClass().getChildren(getDocFilter());
+    protected ASTNode getClassDocBlock(){
+        var docs = getPsiClass().getChildren(languageConfig.getDocFilter());
         if (docs.length>0)
-            return docs[0].getText();
-        return "";
+            return docs[0];
+        return null;
     }
 
+    /**
+     * @param directory The directory of the file containing the class under test, so we can search between that and
+     *                  the project root for test fragments to inherrit
+     */
     private void getNamespaceScope(PsiDirectory directory){
-        if (!directory.getVirtualFile().getPath().equals(directory.getProject().getBasePath()))
-            getNamespaceScope(Objects.requireNonNull(directory.getParentDirectory()));
-        Arrays.stream(directory.getFiles()).filter(f-> f.getName().equalsIgnoreCase("testfragments.txt")).forEach(file->incorporateTestParts(file.getText()));
+        if (directory.getParentDirectory() != null) {
+            if (!directory.getVirtualFile().getPath().equals(directory.getProject().getBasePath()))
+                getNamespaceScope(Objects.requireNonNull(directory.getParentDirectory()));
+            Arrays.stream(directory.getFiles()).filter(f -> f.getName().equalsIgnoreCase("testfragments.txt")).forEach(file -> incorporateTestParts(file.getNode()));
+        }
     }
 
-    public ClassScope(PsiFile psiFile) {
-        testFragments = new HashMap<>();
-        this.psiFile = Objects.requireNonNull(psiFile);
-        packageName = getPackageName();
-        className = getClassName();
-        assert !className.endsWith("test") :"this is a test file, bailing";
-
-        getNamespaceScope( psiFile.getContainingDirectory() );
-        var classDocBlock = getClassDocBlock();
-        incorporateTestParts(classDocBlock);
-
+    public ClassScope(PsiFile psiFile, LanguageConfig languageConfig) {
+        super(languageConfig);
+        nameMap = new HashMap<>();
         methodList = new ArrayList<>();
-        for (var m: getPsiClassBody().getChildren(getFunctionFilter()))
-            methodList.add(getFunctionScope(this, m));
+
+        this.psiFile = Objects.requireNonNull(psiFile, "psiFile must not be null in order to calculate full tree dependencies");
+        assert !getClassName().endsWith("test") :"this is a test file, bailing";
+        getNamespaceScope( psiFile.getContainingDirectory() );
+
+        incorporateTestParts(getClassDocBlock());
+
+        for (var m: getPsiClassBody().getChildren(languageConfig.getFunctionFilter()))
+            methodList.add(getFunctionScope(this, m, nameMap));
     }
 
-    private void incorporateTestParts(String classDocBlock) {
-        testDeclaration = Util.filteredJoin("\n", new String[]{testDeclaration, getSection(Util.TestSections.testDeclaration, classDocBlock)});
-        testSetup = Util.filteredJoin("\n", new String[]{ testSetup, getSection(Util.TestSections.testSetup, classDocBlock)});
-        testTeardown = Util.filteredJoin("\n", new String[]{testTeardown, getSection(Util.TestSections.testTeardown, classDocBlock)});
-        testFragments.putAll(Util.getNamedFragments(classDocBlock));
+    public void incorporateTestParts(ASTNode classDocBlock) {
+        if (classDocBlock == null)
+            return;
+        JavadocListener javadocListener = new JavadocListener();
+        var javadocTree = new JavadocParser(
+                new CommonTokenStream(
+                        new JavadocLexer(
+                                CharStreams.fromString(
+                                        classDocBlock.getText())))).documentation();
+        org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(javadocListener, javadocTree);
+        List<BlockTag> blockTags = javadocListener.blockTags;
+
+        for(BlockTag blockTag : blockTags)
+            switch(blockTag.context()) {
+                case testFragment -> testFragments.put(blockTag.subject(), blockTag.content());
+                case testData -> testData.put(blockTag.subject(), blockTag.content());
+                case testDeclaration -> testDeclaration +=  (testDeclaration.isBlank()?"":"\n") + blockTag.content();
+                case testSetup -> testSetup +=  (testSetup.isBlank()?"":"\n") + blockTag.content();
+                case testTeardown -> testTeardown +=  (testTeardown.isBlank()?"":"\n") + blockTag.content();
+                //TODO: implement this
+                default -> throw new RuntimeException("unsupported block tag found for class context:"+blockTag.context());
+            }
     }
 
+    /**
+     * this will exclude empty (null) scopes so that templating errors are easier to spot
+     *
+     * @return the list of key-value pairs that define this scope, to be supplied to the templating engine
+     */
     @NotNull
     public HashMap<String, Object> getScopes() {
+        String packageName = getPackageName();
+        String className = getClassName();
         HashMap<String, Object> scopes = new HashMap<>() {
             {
                 put("testNamespace", Constants.TEST_NAMESPACE);
                 put("package_name", packageName);
                 put(Constants.CLASS_NAME, className);
                 put("class_fqname", packageName + "." + className);
-                put(Util.TestSections.testDeclaration.toString(), testDeclaration);
-                put(Util.TestSections.testSetup.toString(), testSetup);
-                put(Util.TestSections.testTeardown.toString(), testTeardown);
+                put(TestHeaders.testDeclaration.toString(), testDeclaration);
+                put(TestHeaders.testSetup.toString(), testSetup);
+                put(TestHeaders.testTeardown.toString(), testTeardown);
                 put(Constants.METHOD_LIST, methodList.stream().map(MethodScope::getScopes).toArray());
             }
         };
         //noinspection StatementWithEmptyBody
         while (scopes.values().remove(null));
+        scopes.put("language_assignment_operator",languageConfig.getAssignmentOperator());
+        scopes.put("language_compile_time_type_determination",languageConfig.getCompileTimeTypeDeterminationKeyword());
+        scopes.put("language_new_value",languageConfig.getNewValueKeyword());
+        scopes.put("class_name_postfix", Constants.CLASS_NAME_POSTFIX);
+        scopes.put("article_name",Constants.ARTICLE_NAME);
         return scopes;
     }
 }

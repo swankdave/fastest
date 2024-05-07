@@ -4,22 +4,21 @@
 
 package {{package_name}}.{{testNamespace}};
 import {{class_fqname}};
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
+import static org.junit.Assert.*;
+import org.junit.*;
 
-class {{className}}test {
+public class {{className}}{{class_name_postfix}} {
 
     {{{testDeclaration}}}
-
     {{#testSetup}}
-    @org.junit.jupiter.api.BeforeEach
+    @Before
     void setUp() {
         {{{testSetup}}}
     }
 
     {{/testSetup}}
     {{#testTeardown}}
-    @org.junit.jupiter.api.AfterEach
+    @After
     void tearDown() {
         {{{testTeardown}}}
     }
@@ -29,7 +28,7 @@ class {{className}}test {
         {{#testList}}
     /*
 {{^testDoc}}
-    * Ensuring {{{testMethodName}}}{{{predicate}}} {{#exceptionTest}}throws{{/exceptionTest}}{{^exceptionTest}}results in{{/exceptionTest}} {{{result}}}
+    * Ensuring {{{testMethodName}}}{{{predicate}}} {{#exceptionTest}}throws{{/exceptionTest}}{{^exceptionTest}}{{^inverted}}results{{/inverted}}{{#inverted}}does not result{{/inverted}} in{{/exceptionTest}} {{{result}}}
 {{/testDoc}}
 {{#testDoc}}
 {{{testDoc}}}
@@ -40,22 +39,16 @@ class {{className}}test {
 {{#testPreamble}}
 {{{testPreamble}}}
 {{/testPreamble}}
-    {{^testPreamble}}
-        {{^isStatic}}
-        var article = new {{{className}}}{{#constructor}}{{{constructor}}}{{/constructor}}{{^constructor}}(){{/constructor}};
-        {{/isStatic}}
-    {{/testPreamble}}
     {{#exceptionTest}}
-        assertThrows(
-            {{{result}}}.class,
-            ()->{{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
-            {{#errorMessage}},"{{{errorMessage}}}"{{/errorMessage}});
+        {{#result}}{{^inverted}}assertThrows({{#errorMessage}}"{{{errorMessage}}}",{{/errorMessage}}
+        {{{result}}}.class,
+        ()->{{/inverted}}{{/result}}{{^isStatic}}{{article_name}}{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}
+        {{#result}}{{^inverted}}){{/inverted}}{{/result}};
     {{/exceptionTest}}
     {{^exceptionTest}}
-        assertEquals(
-            {{^isStatic}}article{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}},
-            {{{result}}}
-            {{#errorMessage}},"{{{errorMessage}}}"{{/errorMessage}});
+        {{#result}}assert{{#inverted}}Not{{/inverted}}Equals({{#errorMessage}}"{{{errorMessage}}}",
+        {{/errorMessage}}{{{result}}},{{/result}}
+        {{^isStatic}}{{article_name}}{{/isStatic}}{{#isStatic}}{{{className}}}{{/isStatic}}.{{{testMethodName}}}{{{predicate}}}{{#result}}){{/result}};
     {{/exceptionTest}}
     {{{postTest}}}
     }

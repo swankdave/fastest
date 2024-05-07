@@ -26,6 +26,7 @@ repositories {
 dependencies {
     implementation("com.github.spullara.mustache.java:compiler:0.9.10")
     implementation("org.antlr:antlr4-runtime:4.13.0")
+    testImplementation("org.mockito:mockito-core:3.+")
 }
 
 // Set the JVM language level used to build the project. Use Java 11 for 2020.3+, and Java 17 for 2022.2+.

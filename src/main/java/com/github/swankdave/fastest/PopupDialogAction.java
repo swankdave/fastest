@@ -9,6 +9,7 @@ import com.github.swankdave.fastest.kotlin.KotlinClassScope;
 import com.github.swankdave.fastest.typescript.TypescriptClassScope;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -25,6 +26,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.io.*;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.github.swankdave.fastest.Constants.CLASS_NAME_POSTFIX;
 
 /**
  * Action class to demonstrate how to interact with the IntelliJ Platform.
@@ -73,7 +77,7 @@ public class PopupDialogAction extends AnAction {
       FileEditorManager fileEditorManager = FileEditorManager.getInstance(project);
       Editor selectedTextEditor = fileEditorManager.getSelectedTextEditor();
       VirtualFile file = fileEditorManager.getSelectedFiles()[0];
-      String testFileName = file.getNameWithoutExtension() + "test.shortest." + file.getExtension();
+      String testFileName = file.getNameWithoutExtension() + CLASS_NAME_POSTFIX + "." + file.getExtension();
 
       if (selectedTextEditor != null) {
         var psiFile = PsiManager.getInstance(project).findFile(file);
@@ -87,15 +91,29 @@ public class PopupDialogAction extends AnAction {
           };
 
         try (InputStream resourceAsStream =
-                     getClass().getClassLoader().getResourceAsStream(classScope.getMustacheTemplateFilename())) {
+                     getClass().getClassLoader().getResourceAsStream(classScope.languageConfig.getMustacheTemplateFilenameForLanguage())) {
           assert resourceAsStream != null : "failed to load template file";
 
-          var vTestDir = file.getParent().findChild(Constants.TEST_NAMESPACE);
-          vTestDir = vTestDir != null ? vTestDir : file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE);
-          var vTestFile = vTestDir.findChild(testFileName);
-          vTestFile = vTestFile != null ? vTestFile: vTestDir.createChildData(this, testFileName);
+          AtomicReference<VirtualFile> vTestDir = new AtomicReference<>(file.getParent().findChild(Constants.TEST_NAMESPACE));
+          if (vTestDir.get() == null)
+            ApplicationManager.getApplication().runWriteAction(() -> {
+                try {
+                    vTestDir.set(file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+          AtomicReference<VirtualFile> vTestFile = new AtomicReference<>(vTestDir.get().findChild(testFileName));
 
-          PsiFile pTestFile = PsiManager.getInstance(project).findFile(vTestFile);
+          if (vTestFile.get() == null)
+            ApplicationManager.getApplication().runWriteAction(() -> {
+              try {
+                vTestFile.set(vTestDir.get().createChildData(this, testFileName));
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            });
+          PsiFile pTestFile = PsiManager.getInstance(project).findFile(vTestFile.get());
           var testDocument = PsiDocumentManager.getInstance(project)
                   .getDocument(Objects.requireNonNull(pTestFile));
 
@@ -111,7 +129,7 @@ public class PopupDialogAction extends AnAction {
               }, pTestFile);
           }
 
-          fileEditorManager.openFile(vTestFile, true);
+          fileEditorManager.openFile(vTestFile.get(), true);
         } catch (IOException e) {
           Project currentProject = event.getProject();
           Messages.showMessageDialog(currentProject, e.getMessage(), "Oops", Messages.getErrorIcon());
@@ -132,7 +150,7 @@ public class PopupDialogAction extends AnAction {
     Project project = e.getProject();
     if (project!=null) {
       if (FileEditorManager.getInstance(project).getSelectedTextEditor()!=null &&
-          !FileEditorManager.getInstance(project).getSelectedFiles()[0].getNameWithoutExtension().endsWith("test.shortest"))
+          !FileEditorManager.getInstance(project).getSelectedFiles()[0].getNameWithoutExtension().endsWith(CLASS_NAME_POSTFIX))
         e.getPresentation().setEnabledAndVisible(true);
       else {
         e.getPresentation().setVisible(true);
