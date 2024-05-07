@@ -1,16 +1,19 @@
 grammar ShorTest;     // The name of the grammar is ShorTest
 
 start
-    : NEWLINE* ((setup|rule) (test_reset|post_test_reset|setup_reset|EOF))+;
-
-setup
-    : anything_but_newline_or_ruletoken+;
+    : ws* ((rule|comment|setup) (eol|post_test_reset|pre_test_reset|EOF))+;
 
 rule
-    : WS* test_name? WS* constructor? WS* predicate WS* RULETOKEN WS* result WS* error_text?;
+    : WS* (test_name WS+)? constructor? WS* predicate WS* (rule_token WS* result)? WS* error_text?;
 
-test_name:
-    identifier;
+rule_token
+    : RULETOKEN;
+
+comment
+    : COMMENTTOKEN anything_but_newline;
+
+test_name
+    : identifier;
 constructor
     : ballanced_parenthesis_statement;
 predicate
@@ -21,73 +24,88 @@ result
     | set_method_statement
     | exception_method_statement;
 error_text
-    : ERRORTOKEN anything_but_newline*;
+    : ERRORTOKEN WS* anything_but_newline*;
 
 set_method_statement
     : ballanced_parenthesis_statement set_keyword;
+
 exception_method_statement
     : ballanced_parenthesis_statement EXCEPTION_KEYWORD;
-method_statement
-    : identifier ballanced_parenthesis_statement;
 
-ballanced_parenthesis_statement :
-    LP ws? parameterList ws? RP;
+ballanced_statement
+    : ballanced_parenthesis_statement
+    | ballanced_bracket_statement
+    | ballanced_squigly_statement;
+
+ballanced_squigly_statement
+    : LC ws? parameterList ws? RC;
+
+ballanced_bracket_statement
+    : LB ws? parameterList ws? RB ;
+
+ballanced_parenthesis_statement
+    : LP ws? parameterList ws? RP;
 
 
 parameterList
-    : parameter ws? (COMMA ws? parameter ws?)*
+    : statement (COMMA statement)*
     | ;
+
+statement:
+    ws* parameter (ws* parameter)* ws*;
 
 parameter
     : identifier
     | string
     | set_method_statement
-    | method_statement
-    | ballanced_parenthesis_statement;
+    | ballanced_statement;
 
-test_reset
-    : NEWLINE;
+eol
+    : NEWLINE WS*;
 post_test_reset
-    : test_reset NEWLINE;
-setup_reset
-    : post_test_reset NEWLINE+;
-
+    : eol NEWLINE WS*;
+pre_test_reset
+    : post_test_reset (NEWLINE WS*)+ ;
 
 set_keyword
-    : SET_KEYWORD
-    | GEN_SET_KEYWORD;
-
+    : SET_KEYWORD ;
 identifier
     : (CHAR_SEQ)+;
 string
-    : QUOTE (CHAR_SEQ|LB|RB|LP|RP|COMMA|ws)* QUOTE;
+    : QUOTE (CHAR_SEQ|LB|RB|LP|RP|LC|RC|COMMA|WS|ERRORTOKEN)* QUOTE;
 ws
     : (WS|NEWLINE)+;
 
 anything_but_newline
-    : (RULETOKEN|anything_but_newline_or_ruletoken) ;
+    : (rule_token|anything_but_newline_or_ruletoken) ;
+
+setup
+    : anything_but_newline_or_ruletoken+;
 
 anything_but_newline_or_ruletoken
-    : (CHAR_SEQ|COMMA|LP|RP|LB|RB|QUOTE|WS|ERRORTOKEN|FAKERULETOKEN|GEN_SET_KEYWORD|EXCEPTION_KEYWORD|SET_KEYWORD|'='|ERRORTOKEN) ;
+    : anything_but_newline_or_ruletoken_or_space (anything_but_newline_or_ruletoken_or_space|WS)*;
 
-ERRORTOKEN
-    : '//'
-    | '#';
+anything_but_newline_or_ruletoken_or_space
+    : (CHAR_SEQ|LB|RB|LP|RP|LC|RC|COMMA|QUOTE|ERRORTOKEN|FAKERULETOKEN|EXCEPTION_KEYWORD|SET_KEYWORD|'=') ;
+
+
+RULETOKEN
+    : '!'?'=>';
+
+COMMENTTOKEN
+    : '///' {_input.LA(-4) != '/' && _input.LA(1) != '/'}? ;
+
 FAKERULETOKEN
     : '\'' RULETOKEN '\'';
-RULETOKEN
-    : '=>';
-GEN_SET_KEYWORD
-    : 'GEN_SET' [A-Z]?;
+
 SET_KEYWORD
     : 'SET' [A-Z]?;
+
 EXCEPTION_KEYWORD
     : 'EX';
-CHAR_SEQ
-    : ~('('|')'|'['|']'|'"'|'\n'|' '|'='|','|'/'|'#')+;
 
-COMMA
-    : ',';
+CHAR_SEQ
+    : ~('('|')'|'['|']'|'{'|'}'|'"'|','|'\n'|' '|'#'|'='|'/')+;
 LP
     : '(';
 RP
@@ -96,9 +114,19 @@ LB
     : '[';
 RB
     : ']';
+LC
+    : '{';
+RC
+    : '}';
 QUOTE
     : '"';
+COMMA
+    : ',';
 NEWLINE
     : '\n';
 WS
     : ' ';
+
+ERRORTOKEN
+    : '//'
+    | '#';

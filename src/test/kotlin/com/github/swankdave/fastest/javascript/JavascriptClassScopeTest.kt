@@ -33,7 +33,7 @@ class JavascriptClassScopeTest: BasePlatformTestCase()  {
             super.myFixture.addFileToProject(
                 "src/JavascriptTestClass.js", """
                 /**
-                 * @testDeclaration
+                 * @testDeclaration stuff
                  * let i;
                  * @testSetup
                  * console.log("Class Test Setup");

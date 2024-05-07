@@ -1,9 +1,14 @@
 package com.github.swankdave.fastest;
 
+import com.github.swankdave.fastest.javadocparser.JavadocLexer;
+import com.github.swankdave.fastest.javadocparser.JavadocParser;
 import com.github.swankdave.fastest.parser.ShorTestLexer;
 import com.github.swankdave.fastest.parser.ShorTestParser;
 import com.intellij.lang.ASTNode;
-import com.intellij.psi.tree.TokenSet;
+import com.intellij.lang.impl.PsiBuilderImpl;
+import com.intellij.lang.java.lexer.JavaDocLexer;
+import com.intellij.lang.java.parser.FileParser;
+import com.intellij.lang.java.parser.JavaParser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
@@ -12,75 +17,106 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public abstract class MethodScope implements IProvideScope {
-    public String methodName;
-    protected boolean isStatic = false;
+import static com.github.swankdave.fastest.Util.GetFragmentNames;
+import static com.github.swankdave.fastest.Util.getNamedFragment;
+
+/**
+ * The MethodScope class represents a scope in a test document that is specific to a method.
+ * It extends the Scope class and provides additional functionality and properties for method-specific scopes.
+ */
+public abstract class MethodScope extends Scope {
+    private final ASTNode methodNode;
+    private String methodName;
     protected boolean hasData = false;
-    protected List<TestInstance> tests;
+    public List<TestInstance> tests;
     protected ShorTestListener listener;
-    protected Map<String, String> testFragments;
 
-    protected abstract TokenSet getDocFilter();
-
-    protected String getDocForMethod(ASTNode method){
-        var docs = method.getChildren(getDocFilter());
-        if (docs.length>0)
-            return docs[0].getText();
-        return "";
+    public String getMethodName() {
+        return methodName;
     }
 
-    protected abstract TokenSet getModifierFilter();
+    protected ASTNode getDoc(){
+        var docs = methodNode.getChildren(languageConfig.getDocFilter());
+        return docs.length>0?docs[0]:null;
+    }
+
+    public final boolean getIsStatic(){
+        return getIsStatic(methodNode);
+    }
 
     protected boolean getIsStatic(@NotNull ASTNode node) {
-        ASTNode childByType = node.findChildByType(getModifierFilter());
+        ASTNode childByType = node.findChildByType(languageConfig.getModifierFilter());
         return childByType != null && childByType.getText().contains("static");
-    }
-
-    public Map<String, String> getTestFragments() {
-        return testFragments;
     }
 
     public List<TestInstance> getTests() {
         return tests;
     }
 
+    /**
+     * this will exclude empty (null) scopes so that templating errors are easier to spot
+     *
+     * @return the list of key-value pairs that define this scope, to be supplied to the templating engine
+     */
     public HashMap<String,Object> getScopes(){
         if (listener==null)
             return new HashMap<>();
         return new HashMap<>() {{
             put(Constants.METHOD_NAME, methodName);
-            put(Constants.IS_STATIC,isStatic);
+            put(Constants.IS_STATIC, getIsStatic());
             put(Constants.TEST_LIST, tests.stream().map(TestInstance::getScopes).toArray());
         }};
     }
 
-    public MethodScope(ClassScope classScope, @NotNull ASTNode method, String methodName, int testNumber) {
+    public MethodScope(LanguageConfig languageConfig, ClassScope classScope, @NotNull ASTNode method, String methodName, HashMap<String,Integer> nameMap) {
+        super(languageConfig);
         tests = new ArrayList<>();
-        String docBlock = Util.getSection(Util.TestSections.test, getDocForMethod(method));
-        testFragments = Util.getNamedFragments(getDocForMethod(method));
-
-        if (docBlock.isEmpty())
+        methodNode = method;
+        if (getDoc() == null)
             return;
+
+
         hasData = true;
         this.methodName = methodName;
-        isStatic = getIsStatic(method);
 
-        InputStream stream = new ByteArrayInputStream(docBlock.getBytes(StandardCharsets.UTF_8));
-        try {
-            ShorTestLexer lexer = new ShorTestLexer(CharStreams.fromStream(stream, StandardCharsets.UTF_8));
-            CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
-            ShorTestParser parser = new ShorTestParser(commonTokenStream);
-            var tree = parser.start();
-            listener = new ShorTestListener(classScope, this, methodName, isStatic, testNumber);
-            org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, tree);
+        JavadocListener javadocListener = new JavadocListener();
+        var javadocTree = new JavadocParser(
+                new CommonTokenStream(
+                        new JavadocLexer(
+                                CharStreams.fromString(
+                                        getDoc().getText())))).documentation();
+        org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(javadocListener, javadocTree);
+        List<BlockTag> blockTags = javadocListener.blockTags;
 
-            tests = listener.getTestList();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        for(BlockTag blockTag : blockTags) {
+            switch(blockTag.context()){
+                case testFragment ->
+                        testFragments.put(blockTag.subject(), blockTag.content());
+                case testData ->
+                        testData.put(blockTag.subject(), blockTag.content());
+                case test -> {
+                    try {
+                        ShorTestParser.StartContext tree = new ShorTestParser(
+                                new CommonTokenStream(
+                                        new ShorTestLexer(
+                                                CharStreams.fromString(blockTag.content())))).start();
+                        listener = new ShorTestListener(classScope, this, nameMap);
+                        org.antlr.v4.runtime.tree.ParseTreeWalker.DEFAULT.walk(listener, tree);
+
+                        ArrayList<TestInstance> testList = listener.getTestList();
+                        tests.addAll(testList);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                default ->
+                        throw new RuntimeException("unsupported block tag found for method context:"+blockTag.context());
+            }
         }
+
     }
 }

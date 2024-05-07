@@ -1,13 +1,12 @@
 package com.github.swankdave.fastest;
 
-import com.github.swankdave.fastest.parser.TestConfig;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 
-public class TestInstance implements IProvideScope {
+public class TestInstance {
 
-    TestConfig config;
+    public TestConfig config;
 
     @Nullable
     private String trim(String str){
@@ -16,32 +15,30 @@ public class TestInstance implements IProvideScope {
         return null;
     }
 
-    private static String getTestName(String name, String testMethodName,int testNumber) {
-        return name.isBlank()?
-                testMethodName + testNumber + "_test":
-                name.trim();
+    private static String getTestName(String customName, String testMethodName, int testNumber) {
+        return (customName.isBlank()? testMethodName: customName).trim() + (testNumber>0?"_"+testNumber:"")+"_test";
     }
 
     public TestInstance(TestConfig testConfig) {
-        assert !testConfig.predicate.isBlank():"predicate required";
-        assert !testConfig.result.isBlank():"result required";
+        assert !testConfig.getPredicate().isBlank():"predicate required";
         config = new TestConfig(testConfig);
     }
 
     public HashMap<String, Object> getScopes(){
         HashMap<String, Object> map = new HashMap<>() {
             {
-                put(Constants.IS_STATIC, (config.isStatic ? "true" : null));
-                put(Constants.TEST_DOC, config.testDoc);
-                put(Constants.TEST_PREAMBLE, config.preamble);
-                put(Constants.TEST_NAME, getTestName(trim(config.testName),config.testMethodName, config.testIndex));
-                put(Constants.CONSTRUCTOR, trim(config.constructor));
-                put(Constants.PREDICATE, trim(config.predicate));
-                put(Constants.TEST_METHOD_NAME, config.testMethodName);
+                put(Constants.IS_STATIC, (config.isStatic() ? "true" : null));
+                put(Constants.TEST_DOC, config.getTestDoc());
+                put(Constants.TEST_PREAMBLE, config.getPreamble());
+                put(Constants.TEST_NAME, getTestName(trim(config.getTestName()),config.getTestMethodName(), config.testIndex));
+                put(Constants.CONSTRUCTOR, trim(config.getConstructor()));
+                put(Constants.PREDICATE, trim(config.getPredicate()));
+                put(Constants.TEST_METHOD_NAME, config.getTestMethodName());
                 put(Constants.EXCEPTION_TEST, config.isException?true: null);
-                put(Constants.RESULT, trim(config.result));
-                put(Constants.ERROR_MESSAGE, trim(config.error));
-                put(Constants.POST_TEST, config.postTest);
+                put(Constants.TEST_INVERTED, config.isInverted?true: null);
+                put(Constants.RESULT, trim(config.getResult()));
+                put(Constants.ERROR_MESSAGE, trim(config.getError()));
+                put(Constants.POST_TEST, config.getPostTest());
             }
         };
         //noinspection StatementWithEmptyBody

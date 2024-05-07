@@ -29,18 +29,6 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSetup(ShorTestParser.SetupContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSetup(ShorTestParser.SetupContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterRule(ShorTestParser.RuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -48,6 +36,30 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitRule(ShorTestParser.RuleContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterRule_token(ShorTestParser.Rule_tokenContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitRule_token(ShorTestParser.Rule_tokenContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterComment(ShorTestParser.CommentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitComment(ShorTestParser.CommentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -137,13 +149,37 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMethod_statement(ShorTestParser.Method_statementContext ctx) { }
+	@Override public void enterBallanced_statement(ShorTestParser.Ballanced_statementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitMethod_statement(ShorTestParser.Method_statementContext ctx) { }
+	@Override public void exitBallanced_statement(ShorTestParser.Ballanced_statementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBallanced_squigly_statement(ShorTestParser.Ballanced_squigly_statementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBallanced_squigly_statement(ShorTestParser.Ballanced_squigly_statementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBallanced_bracket_statement(ShorTestParser.Ballanced_bracket_statementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBallanced_bracket_statement(ShorTestParser.Ballanced_bracket_statementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -173,6 +209,18 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterStatement(ShorTestParser.StatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStatement(ShorTestParser.StatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterParameter(ShorTestParser.ParameterContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -185,13 +233,13 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_reset(ShorTestParser.Test_resetContext ctx) { }
+	@Override public void enterEol(ShorTestParser.EolContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_reset(ShorTestParser.Test_resetContext ctx) { }
+	@Override public void exitEol(ShorTestParser.EolContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -209,13 +257,13 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSetup_reset(ShorTestParser.Setup_resetContext ctx) { }
+	@Override public void enterPre_test_reset(ShorTestParser.Pre_test_resetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSetup_reset(ShorTestParser.Setup_resetContext ctx) { }
+	@Override public void exitPre_test_reset(ShorTestParser.Pre_test_resetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -281,6 +329,18 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSetup(ShorTestParser.SetupContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSetup(ShorTestParser.SetupContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAnything_but_newline_or_ruletoken(ShorTestParser.Anything_but_newline_or_ruletokenContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -288,6 +348,18 @@ public class ShorTestBaseListener implements ShorTestListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitAnything_but_newline_or_ruletoken(ShorTestParser.Anything_but_newline_or_ruletokenContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAnything_but_newline_or_ruletoken_or_space(ShorTestParser.Anything_but_newline_or_ruletoken_or_spaceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAnything_but_newline_or_ruletoken_or_space(ShorTestParser.Anything_but_newline_or_ruletoken_or_spaceContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

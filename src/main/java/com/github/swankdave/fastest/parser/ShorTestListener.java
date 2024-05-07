@@ -18,16 +18,6 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitStart(ShorTestParser.StartContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ShorTestParser#setup}.
-	 * @param ctx the parse tree
-	 */
-	void enterSetup(ShorTestParser.SetupContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ShorTestParser#setup}.
-	 * @param ctx the parse tree
-	 */
-	void exitSetup(ShorTestParser.SetupContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#rule}.
 	 * @param ctx the parse tree
 	 */
@@ -37,6 +27,26 @@ public interface ShorTestListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitRule(ShorTestParser.RuleContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#rule_token}.
+	 * @param ctx the parse tree
+	 */
+	void enterRule_token(ShorTestParser.Rule_tokenContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#rule_token}.
+	 * @param ctx the parse tree
+	 */
+	void exitRule_token(ShorTestParser.Rule_tokenContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#comment}.
+	 * @param ctx the parse tree
+	 */
+	void enterComment(ShorTestParser.CommentContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#comment}.
+	 * @param ctx the parse tree
+	 */
+	void exitComment(ShorTestParser.CommentContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#test_name}.
 	 * @param ctx the parse tree
@@ -108,15 +118,35 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitException_method_statement(ShorTestParser.Exception_method_statementContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ShorTestParser#method_statement}.
+	 * Enter a parse tree produced by {@link ShorTestParser#ballanced_statement}.
 	 * @param ctx the parse tree
 	 */
-	void enterMethod_statement(ShorTestParser.Method_statementContext ctx);
+	void enterBallanced_statement(ShorTestParser.Ballanced_statementContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ShorTestParser#method_statement}.
+	 * Exit a parse tree produced by {@link ShorTestParser#ballanced_statement}.
 	 * @param ctx the parse tree
 	 */
-	void exitMethod_statement(ShorTestParser.Method_statementContext ctx);
+	void exitBallanced_statement(ShorTestParser.Ballanced_statementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#ballanced_squigly_statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterBallanced_squigly_statement(ShorTestParser.Ballanced_squigly_statementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#ballanced_squigly_statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitBallanced_squigly_statement(ShorTestParser.Ballanced_squigly_statementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#ballanced_bracket_statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterBallanced_bracket_statement(ShorTestParser.Ballanced_bracket_statementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#ballanced_bracket_statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitBallanced_bracket_statement(ShorTestParser.Ballanced_bracket_statementContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#ballanced_parenthesis_statement}.
 	 * @param ctx the parse tree
@@ -138,6 +168,16 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitParameterList(ShorTestParser.ParameterListContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement(ShorTestParser.StatementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement(ShorTestParser.StatementContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#parameter}.
 	 * @param ctx the parse tree
 	 */
@@ -148,15 +188,15 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitParameter(ShorTestParser.ParameterContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ShorTestParser#test_reset}.
+	 * Enter a parse tree produced by {@link ShorTestParser#eol}.
 	 * @param ctx the parse tree
 	 */
-	void enterTest_reset(ShorTestParser.Test_resetContext ctx);
+	void enterEol(ShorTestParser.EolContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ShorTestParser#test_reset}.
+	 * Exit a parse tree produced by {@link ShorTestParser#eol}.
 	 * @param ctx the parse tree
 	 */
-	void exitTest_reset(ShorTestParser.Test_resetContext ctx);
+	void exitEol(ShorTestParser.EolContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#post_test_reset}.
 	 * @param ctx the parse tree
@@ -168,15 +208,15 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitPost_test_reset(ShorTestParser.Post_test_resetContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ShorTestParser#setup_reset}.
+	 * Enter a parse tree produced by {@link ShorTestParser#pre_test_reset}.
 	 * @param ctx the parse tree
 	 */
-	void enterSetup_reset(ShorTestParser.Setup_resetContext ctx);
+	void enterPre_test_reset(ShorTestParser.Pre_test_resetContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ShorTestParser#setup_reset}.
+	 * Exit a parse tree produced by {@link ShorTestParser#pre_test_reset}.
 	 * @param ctx the parse tree
 	 */
-	void exitSetup_reset(ShorTestParser.Setup_resetContext ctx);
+	void exitPre_test_reset(ShorTestParser.Pre_test_resetContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#set_keyword}.
 	 * @param ctx the parse tree
@@ -228,6 +268,16 @@ public interface ShorTestListener extends ParseTreeListener {
 	 */
 	void exitAnything_but_newline(ShorTestParser.Anything_but_newlineContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#setup}.
+	 * @param ctx the parse tree
+	 */
+	void enterSetup(ShorTestParser.SetupContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#setup}.
+	 * @param ctx the parse tree
+	 */
+	void exitSetup(ShorTestParser.SetupContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ShorTestParser#anything_but_newline_or_ruletoken}.
 	 * @param ctx the parse tree
 	 */
@@ -237,4 +287,14 @@ public interface ShorTestListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitAnything_but_newline_or_ruletoken(ShorTestParser.Anything_but_newline_or_ruletokenContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ShorTestParser#anything_but_newline_or_ruletoken_or_space}.
+	 * @param ctx the parse tree
+	 */
+	void enterAnything_but_newline_or_ruletoken_or_space(ShorTestParser.Anything_but_newline_or_ruletoken_or_spaceContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ShorTestParser#anything_but_newline_or_ruletoken_or_space}.
+	 * @param ctx the parse tree
+	 */
+	void exitAnything_but_newline_or_ruletoken_or_space(ShorTestParser.Anything_but_newline_or_ruletoken_or_spaceContext ctx);
 }

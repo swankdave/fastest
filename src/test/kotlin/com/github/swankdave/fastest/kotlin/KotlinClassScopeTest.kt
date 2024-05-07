@@ -29,6 +29,12 @@ class KotlinClassScopeTest: BasePlatformTestCase()  {
         )
     }
 
+    /**
+     * @test
+     * something
+     * @testSection sectionName
+     * somethingelse
+     */
     fun testBasicInitialization(){
         val classScope = KotlinClassScope(
             super.myFixture.addFileToProject(
