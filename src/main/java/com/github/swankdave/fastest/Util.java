@@ -5,21 +5,11 @@ import javaslang.Tuple2;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Util {
 
-    public static List<Tuple2<TestHeaders,String>> GetFragmentNames(ASTNode docBlock, LanguageConfig language){
-        return Arrays.stream(docBlock.getChildren(null))
-                .filter(node -> node.getElementType().equals(language.getDocSectionTokenType()) &&
-                                node.getChildren(null).length>3 &&
-                                Arrays.stream(TestHeaders.values()).map(Enum::toString)
-                                    .anyMatch(n -> n.equals(node.getFirstChildNode().getText().substring(1))))
-                .map(node -> new Tuple2<>(
-                        TestHeaders.valueOf(node.getFirstChildNode().getText().substring(1)),
-                        node.getChildren(null)[2].getText()))
-                .collect(Collectors.toList());
-    }
     /**
      *
      * @return
@@ -59,53 +49,6 @@ public class Util {
 
         }
         return rtn.toString();
-    }
-
-    public static String getDocBlockAsString(ASTNode docBlock, LanguageConfig language) {
-        StringBuilder stringBuilder = new StringBuilder();
-        var fragments = new java.util.LinkedList<>(Arrays.stream(docBlock.getChildren(null)).toList());
-        Collections.reverse(fragments);
-        while (!fragments.isEmpty()) {
-            var node = fragments.removeLast();
-
-            java.util.LinkedList<ASTNode> children = new java.util.LinkedList<>(Arrays.stream(node.getChildren(null)).toList());
-            Collections.reverse(children);
-            if (!children.isEmpty()) {
-                fragments.addAll(children);
-                continue;
-            }
-
-            if (Arrays.stream(language.getDocBlockTokens())
-                    .noneMatch(t->t.equals(node.getElementType())))
-                    stringBuilder.append(node.getText());
-        }
-
-        StringBuilder rtn = new StringBuilder();
-        boolean keepLine = false;
-        for (var line : stringBuilder.toString().split("\n")) {
-            if (line.trim().startsWith("@"))
-                keepLine = line.trim().startsWith("@test");
-            else if (keepLine)
-                rtn.append(line.isBlank()?"":line).append("\n");
-        }
-        return rtn.toString();
-    }
-
-    public static String getUnnamedFragment(TestHeaders FragmentType, ASTNode docBlock, LanguageConfig language){
-        return getNamedFragment(FragmentType, "", new LinkedList<>(Arrays.stream(docBlock.getChildren(null)).toList()), language);
-    }
-
-    /**
-     * convenience function that joins the non-empty members of a list of strings with the aforementioned delimiter
-     * @param delimiter delimiter to use to seperate strings
-     * @param strings the list of strings to be joined
-     * @return block of text
-     *
-     * @test
-     * (",",new String[]{"a","test"}) => "a,test"
-     */
-    static String filteredJoin(String delimiter, String[] strings){
-        return Arrays.stream(strings).filter(s -> s!=null && !s.isBlank()).collect(Collectors.joining(delimiter));
     }
 
     /**
@@ -157,7 +100,7 @@ public class Util {
             text = Arrays.stream(text.split("\n")).map(line-> {
                 if (line.trim().isEmpty())
                     return line;
-                if (mindent< targetIndent)
+                if (mindent < targetIndent)
                     return  " ".repeat(targetIndent - mindent) + line;
                 return line.substring(mindent - targetIndent);
             }).collect(Collectors.joining("\n"));
@@ -173,5 +116,100 @@ public class Util {
                 languageConfig.getAssignmentOperator(),
                 value + languageConfig.getLineterminationKeyword(),
                 "\n"});
+    }
+
+    public static List<String> getSublistFromParameter(String statement, List<String> parameters) {
+        var rtn = new ArrayList<String>();
+        if (statement.trim().equals("*"))
+            return new LinkedList<>(parameters);
+
+        while (!statement.isBlank())
+            if (statement.trim().startsWith("[")) {
+                var firstBracket = statement.indexOf('[')+1;
+                var secondBracket = statement.indexOf(']')+1;
+                var rangeStatement = statement.substring(firstBracket, secondBracket - firstBracket).trim();
+                statement = statement.substring(secondBracket).trim();
+                for (var range : rangeStatement.split(",")) {
+                    var start = range.split("-")[0].trim();
+                    var end = "";
+                    if (range.split("-").length>1)
+                        end = range.split("-")[1].trim();
+
+                    if (start.isBlank() && end.isBlank())
+                        throw new Error("illegal range detected");
+                    if (!start.isBlank() && !parameters.contains(start))
+                        throw new Error("illegal range element: " + start);
+                    if (!end.isBlank() && !parameters.contains(end))
+                        throw new Error("illegal range element: " + end);
+
+                    boolean keep = start.isBlank();
+                    for (var parameter : parameters) {
+                        if (parameter.equals(start))
+                            keep = true;
+                        if (keep)
+                            if (!rtn.contains(parameter))
+                                rtn.add(parameter);
+                        if (parameter.equals(end))
+                            keep = false;
+                    }
+
+                }
+            } else if (statement.trim().startsWith("/")) {
+                var firstBracket = statement.indexOf('/')+1;
+                var secondBracket = statement.indexOf('/', firstBracket)+1;
+                var rangeStatement = statement.substring(firstBracket, secondBracket - firstBracket).trim();
+                statement = statement.substring(secondBracket).trim();
+                var pattern = Pattern.compile(rangeStatement);
+                for (var parameter : parameters)
+                    if (pattern.matcher(parameter).matches())
+                        rtn.add(parameter);
+            } else
+                for (var value : statement.split(" "))
+                    if (!parameters.contains(value)) {
+                        throw new Error("illegal range element: " + value);
+                    } else {
+                        rtn.add(value);
+                        statement = statement.substring(value.length()).trim();
+                    }
+        return rtn;
+    }
+
+    public static Tuple2<List<String>, String>breakRangeParameters(String statement){
+        List<String> rtn = new ArrayList<>();
+        StringBuilder currentParameter = new StringBuilder();
+        boolean inBracket = false;
+        boolean inRegex = false;
+        int parenthesisCount = 0;
+        while (!statement.isBlank()){
+            if (!inRegex && statement.charAt(0) == '(') {
+                parenthesisCount++;
+                if (parenthesisCount == 1) {
+                    statement = statement.substring(1);
+                    continue;
+                }
+            }
+            if (!inRegex && statement.charAt(0) == ')') {
+                parenthesisCount--;
+                if (parenthesisCount == 0) {
+                    statement = statement.substring(1);
+                    break;
+                }
+            }
+            if (!inRegex && statement.charAt(0) == '[')
+                inBracket = true;
+            if (statement.charAt(0) == '/') {
+                inRegex = !inRegex;
+            }
+            if (!inBracket && !inRegex && statement.charAt(0) == ','){
+                rtn.add(currentParameter.toString());
+                currentParameter = new StringBuilder();
+            } else
+                currentParameter.append(statement.charAt(0));
+            statement = statement.substring(1);
+            if (!inRegex && !statement.isEmpty() && statement.charAt(0) == ']')
+                inBracket = false;
+        }
+        rtn.add(currentParameter.toString());
+        return new Tuple2<>(rtn, statement);
     }
 }

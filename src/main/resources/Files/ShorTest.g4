@@ -1,111 +1,149 @@
 grammar ShorTest;     // The name of the grammar is ShorTest
 
 start
-    : ws* ((rule|comment|setup) (eol|post_test_reset|pre_test_reset|EOF))+;
+    : ws* ( WS* (parameter_set|truth_list|rule|comment|setup) (rule_seperator|EOF))+ EOF;
 
+comment
+    : COMMENTTOKEN everything_until_newline ;
+
+setup
+    : everything_until_newline ;
+
+//testlist based tests
+parameter_set
+    : (identifier ws* COLIN)? ws* LC ws? key_value_list ws? RC;
+
+key_value_list
+    : key_value_pair (COMMA key_value_pair)*;
+
+key_value_pair
+    : ws* identifier ws* COLIN ws* statement ws*;
+
+truth_list
+    : WS* LP ws* ((rule|comment|setup) rule_seperator WS*)* rule (WS* rule_seperator (rule|comment|setup))* RP;
+
+//rule based tests
 rule
-    : WS* (test_name WS+)? constructor? WS* predicate WS* (rule_token WS* result)? WS* error_text?;
+    : WS* (test_name WS+)? constructor? predicate (WS* rule_token WS* result)? WS* (COMMENTTOKEN error_text)?;
+
+test_name
+    : identifier;
+
+constructor
+    : WS* LP WS* (parameterList|programming_contents) WS* RP WS*;
+
+predicate
+    : WS* LP WS* (parameterList|programming_contents) WS* RP programming_contents*;
 
 rule_token
     : RULETOKEN;
 
-comment
-    : COMMENTTOKEN anything_but_newline;
-
-test_name
-    : identifier;
-constructor
-    : ballanced_parenthesis_statement;
-predicate
-    : ballanced_parenthesis_statement anything_but_newline_or_ruletoken*;
 result
-    : parameter
-    | ballanced_parenthesis_statement
+    : exception_method_statement
     | set_method_statement
-    | exception_method_statement;
+    | programming_contents;
+
 error_text
-    : ERRORTOKEN WS* anything_but_newline*;
+    : everything_until_newline;
+
+rule_seperator
+    : (EOL|post_test_reset|pre_test_reset);
+
+//keyword based Statements
+exception_method_statement
+    : LP programming_contents RP EXCEPTION_KEYWORD;
 
 set_method_statement
-    : ballanced_parenthesis_statement set_keyword;
+    : LP ws? parameterList ws? RP set_keyword;
 
-exception_method_statement
-    : ballanced_parenthesis_statement EXCEPTION_KEYWORD;
-
-ballanced_statement
-    : ballanced_parenthesis_statement
-    | ballanced_bracket_statement
-    | ballanced_squigly_statement;
-
-ballanced_squigly_statement
-    : LC ws? parameterList ws? RC;
-
-ballanced_bracket_statement
-    : LB ws? parameterList ws? RB ;
-
-ballanced_parenthesis_statement
-    : LP ws? parameterList ws? RP;
-
-
+//structured parameters
 parameterList
     : statement (COMMA statement)*
     | ;
 
-statement:
-    ws* parameter (ws* parameter)* ws*;
-
-parameter
-    : identifier
+statement
+    : set_method_statement
+    | enclosed_statement
     | string
-    | set_method_statement
-    | ballanced_statement;
+    | identifier
+    | programming_contents;
 
-eol
-    : NEWLINE WS*;
+enclosed_statement
+    : LC ws? statement* ws? RC
+    | LB ws? statement* ws? RB
+    | LP ws? statement* ws? RP ;
+
+//programming contents
+programming_contents
+    : WS* programming_content (WS programming_content)*;
+
+programming_content
+    : (set_method_statement|programming_content_ballanced_statement|(CHAR_SEQ))+ ;
+
+programming_content_ballanced_statement
+    : LC ws? programming_contents_with_comma ws? RC
+    | LB ws? programming_contents_with_comma ws? RB
+    | LP ws? programming_contents_with_comma ws? RP
+    | string;
+
+programming_contents_with_comma
+    : WS* (programming_content|WS|COMMA|COLIN|FS)* WS*;
+
+// resets
+EOL
+    : WS* NEWLINE WS*;
 post_test_reset
-    : eol NEWLINE WS*;
+    : EOL EOL;
 pre_test_reset
-    : post_test_reset (NEWLINE WS*)+ ;
+    : post_test_reset EOL+ ;
+
+
+
+
+everything_until_newline
+    : ~(EOL|RULETOKEN)+ ;
 
 set_keyword
     : SET_KEYWORD ;
 identifier
-    : (CHAR_SEQ)+;
+    : CHAR_SEQ;
 string
-    : QUOTE (CHAR_SEQ|LB|RB|LP|RP|LC|RC|COMMA|WS|ERRORTOKEN)* QUOTE;
+    : QUOTE (ESCAPEDQUOTE|~('"'))* QUOTE;
 ws
     : (WS|NEWLINE)+;
 
-anything_but_newline
-    : (rule_token|anything_but_newline_or_ruletoken) ;
-
-setup
-    : anything_but_newline_or_ruletoken+;
-
-anything_but_newline_or_ruletoken
-    : anything_but_newline_or_ruletoken_or_space (anything_but_newline_or_ruletoken_or_space|WS)*;
-
-anything_but_newline_or_ruletoken_or_space
-    : (CHAR_SEQ|LB|RB|LP|RP|LC|RC|COMMA|QUOTE|ERRORTOKEN|FAKERULETOKEN|EXCEPTION_KEYWORD|SET_KEYWORD|'=') ;
 
 
 RULETOKEN
     : '!'?'=>';
 
 COMMENTTOKEN
-    : '///' {_input.LA(-4) != '/' && _input.LA(1) != '/'}? ;
+    : FS FS FS
+    | '#';
 
 FAKERULETOKEN
     : '\'' RULETOKEN '\'';
 
 SET_KEYWORD
-    : 'SET' [A-Z]?;
+    : 'SET' [A-Z]? ;
 
 EXCEPTION_KEYWORD
     : 'EX';
 
+ESCAPEDQUOTE
+    : ESCAPE '"';
+ESCAPE
+    : '\\';
+
 CHAR_SEQ
-    : ~('('|')'|'['|']'|'{'|'}'|'"'|','|'\n'|' '|'#'|'='|'/')+;
+    : CHAR+;
+CHAR
+    : (ESCAPEDQUOTE|NON_RESERVED_CHARACTER);
+NON_RESERVED_CHARACTER
+    : ~('('|')'|'['|']'|'{'|'}'|':'|'"'|','|'\n'|' '|'#'|'='|'\\'|'/');
+
+FS
+    : '/';
 LP
     : '(';
 RP
@@ -118,15 +156,20 @@ LC
     : '{';
 RC
     : '}';
+EQ
+    : '=';
+
+
 QUOTE
     : '"';
 COMMA
-    : ',';
+    : WS* ',' WS*;
 NEWLINE
     : '\n';
+
+COLIN
+    : ':';
+STAR
+    : '*';
 WS
     : ' ';
-
-ERRORTOKEN
-    : '//'
-    | '#';

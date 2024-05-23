@@ -59,7 +59,7 @@ public class TestConfig {
     }
 
     public String getError() {
-        return testPartMap.get(TestSections.error);
+        return testPartMap.get(TestSections.error).trim();
     }
 
     public String getPostTest() {
@@ -78,9 +78,7 @@ public class TestConfig {
         testPartMap.put(TestSections.preamble, preamble);
     }
 
-    public void setConstructor(String constructor) {
-        testPartMap.put(TestSections.constructor, constructor);
-    }
+    public void setConstructor(String constructor) { testPartMap.put(TestSections.constructor, constructor);}
 
     public void setPredicate(String predicate) {
         testPartMap.put(TestSections.predicate, predicate);
@@ -244,6 +242,7 @@ public class TestConfig {
 
 
     public void format(LanguageConfig languageConfig) {
+        //setTestDoc(Arrays.stream(getTestDoc().split("\n")).map(s -> " ".repeat(languageConfig.getDefaultIndent()) + s.trim()).collect(Collectors.joining("\n")));
         setTestDoc(Util.setMindent(getTestDoc(), languageConfig.getDefaultIndent() ));
         setPreamble(Util.setMindent(getPreamble(), 2*languageConfig.getDefaultIndent()));
     }

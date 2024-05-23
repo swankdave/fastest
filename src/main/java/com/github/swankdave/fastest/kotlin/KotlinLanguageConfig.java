@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes;
 public class KotlinLanguageConfig extends LanguageConfig {
     @Override
     public String getMustacheTemplateFilenameForLanguage() {
-        return "Files/kotlin.jtest.mustache";
+        return "Files/kotlin.jtest.vtl";
     }
 
     @NotNull
@@ -47,6 +47,10 @@ public class KotlinLanguageConfig extends LanguageConfig {
     protected TokenSet getFunctionFilter() {
         return TokenSet.create(KtNodeTypes.FUN);
     }
+
+    @NotNull
+    @Override
+    public String getNewValueKeyword() {return "";}
 
     public IElementType[] getDocBlockTokens(){
         return new IElementType[]{KDocTokens.START, KDocTokens.LEADING_ASTERISK, KDocTokens.END};

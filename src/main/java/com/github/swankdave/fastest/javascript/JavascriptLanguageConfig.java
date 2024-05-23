@@ -22,7 +22,7 @@ public class JavascriptLanguageConfig extends LanguageConfig {
     @NotNull
     @Override
     public String getMustacheTemplateFilenameForLanguage() {
-        return "Files/javascript.jest.mustache";
+        return "Files/javascript.jest.vtl";
     }
 
     @NotNull

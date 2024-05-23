@@ -138,16 +138,6 @@ public interface JavadocParserListener extends ParseTreeListener {
 	 */
 	void exitBlockTagName(JavadocParser.BlockTagNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link JavadocParser#blockTagContents}.
-	 * @param ctx the parse tree
-	 */
-	void enterBlockTagContents(JavadocParser.BlockTagContentsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link JavadocParser#blockTagContents}.
-	 * @param ctx the parse tree
-	 */
-	void exitBlockTagContents(JavadocParser.BlockTagContentsContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link JavadocParser#blockTagContent}.
 	 * @param ctx the parse tree
 	 */

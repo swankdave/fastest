@@ -98,4 +98,5 @@ public abstract class LanguageConfig {
         return node!=null && node.getText().contains("@"+fragmentType.toString()+ " +" +fragmentName);
     }
 
+    public String getCommentString() { return "//"; }
 }

@@ -8,7 +8,11 @@ import com.intellij.psi.impl.source.tree.JavaDocElementType;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.TokenSet;
 import org.jetbrains.annotations.NotNull;
+import static com.intellij.psi.JavaTokenType.C_STYLE_COMMENT;
 import static com.intellij.psi.JavaDocTokenType.*;
+
+//import static com.intellij.psi.JavaTokenType.C_STYLE_COMMENT;
+//import static com.intellij.lang.javascript.JSTokenTypes.C_STYLE_COMMENT;
 import static com.intellij.psi.impl.source.tree.JavaDocElementType.DOC_PARAMETER_REF;
 import static com.intellij.psi.impl.source.tree.JavaDocElementType.DOC_TAG;
 
@@ -18,7 +22,8 @@ public class JavaLanguageConfig extends LanguageConfig {
         return new IElementType[]{
                 DOC_COMMENT_START,
                 DOC_COMMENT_LEADING_ASTERISKS,
-                DOC_COMMENT_END};
+                DOC_COMMENT_END,
+                C_STYLE_COMMENT};
     }
 
     public JavaLanguageConfig() {}
@@ -26,7 +31,7 @@ public class JavaLanguageConfig extends LanguageConfig {
     @NotNull
     @Override
     public String getMustacheTemplateFilenameForLanguage() {
-        return "Files/java.jtest.mustache";
+        return "Files/java.jtest.vtl";
     }
 
     @NotNull

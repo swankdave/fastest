@@ -166,7 +166,7 @@ class TypescriptMethodScopeTest: BasePlatformTestCase()  {
                 class TestscriptTestClass{
                 /** 
                  * @test
-                 *   () ("Shor","Test") => "ShorTest" 
+                 *   (a) ("Shor","Test") => "ShorTest" 
                  */
                     myTest(a, b){
                         return a.concat(b);
@@ -176,7 +176,7 @@ class TypescriptMethodScopeTest: BasePlatformTestCase()  {
             )
         ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.CONSTRUCTOR)) { "failed to detect test object constructor" }
-        assert(methodScope.tests[0].scopes[Constants.CONSTRUCTOR].toString().contains("()")) {"incorrect test object constructor detected"}
+        assert(methodScope.tests[0].scopes[Constants.CONSTRUCTOR].toString().contains("(a)")) {"incorrect test object constructor detected"}
     }
 
     fun testDiscoverTestPredicate(){
@@ -289,7 +289,7 @@ class TypescriptMethodScopeTest: BasePlatformTestCase()  {
                 class TestscriptTestClass{
                 /** 
                  * @test
-                 *   ("Shor","Test") => "ShorTest" //custom error message
+                 *   ("Shor","Test") => "ShorTest" ///custom error message
                  */
                     myTest(a, b){
                         return a.concat(b);
@@ -445,7 +445,7 @@ class TypescriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
+        assert(methodScope.tests[0].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert(!(methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for the test\"")){"incorrect test postamble "}
     }
 
@@ -496,9 +496,9 @@ class TypescriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.testFragments.isNotEmpty());
+        assert(methodScope.testFragments.isNotEmpty())
         assert(methodScope.testData.isEmpty())
-        assert(methodScope.testFragments.contains("testfragmentname"));
+        assert(methodScope.testFragments.contains("testfragmentname"))
         TestCase.assertFalse(methodScope.testFragments.contains("notTestFragmentName"))
     }
 
@@ -522,9 +522,9 @@ class TypescriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.testData.isNotEmpty());
+        assert(methodScope.testData.isNotEmpty())
         assert(methodScope.testFragments.isEmpty())
-        assert(methodScope.testData.contains("testfragmentname"));
+        assert(methodScope.testData.contains("testfragmentname"))
         TestCase.assertFalse(methodScope.testData.contains("notTestFragmentName"))
     }
 }

@@ -21,13 +21,6 @@ public abstract class ClassScope extends Scope {
     protected HashMap<String, Integer> nameMap;
     protected NavigatablePsiElement psiFile;
 
-    protected Integer getTestCount(String methodName) {
-        return methodList.stream()
-                .filter(m -> Objects.equals(m.getMethodName(), methodName))
-                .map(a -> a.getTests().size())
-                .reduce(0, Integer::sum);
-    }
-
     @NotNull
     public abstract String getClassName();
 
@@ -124,7 +117,7 @@ public abstract class ClassScope extends Scope {
     /**
      * this will exclude empty (null) scopes so that templating errors are easier to spot
      *
-     * @return the list of key-value pairs that define this scope, to be supplied to the templating engine
+     * @return the map of key-value pairs that define this scope, to be supplied to the templating engine
      */
     @NotNull
     public HashMap<String, Object> getScopes() {
@@ -144,6 +137,7 @@ public abstract class ClassScope extends Scope {
         };
         //noinspection StatementWithEmptyBody
         while (scopes.values().remove(null));
+        while (scopes.values().remove(""));
         scopes.put("language_assignment_operator",languageConfig.getAssignmentOperator());
         scopes.put("language_compile_time_type_determination",languageConfig.getCompileTimeTypeDeterminationKeyword());
         scopes.put("language_new_value",languageConfig.getNewValueKeyword());

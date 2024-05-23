@@ -173,18 +173,6 @@ public class JavadocParserBaseListener implements JavadocParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBlockTagContents(JavadocParser.BlockTagContentsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitBlockTagContents(JavadocParser.BlockTagContentsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterBlockTagContent(JavadocParser.BlockTagContentContext ctx) { }
 	/**
 	 * {@inheritDoc}

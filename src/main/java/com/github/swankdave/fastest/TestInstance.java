@@ -43,6 +43,7 @@ public class TestInstance {
         };
         //noinspection StatementWithEmptyBody
         while (map.values().remove(null));
+        while (map.values().remove(""));
         return map;
     }
 }

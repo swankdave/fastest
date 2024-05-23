@@ -2,10 +2,7 @@ package com.github.swankdave.fastest;
 
 import com.github.swankdave.fastest.javadocparser.JavadocParser;
 import com.github.swankdave.fastest.javadocparser.JavadocParserBaseListener;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,11 +11,13 @@ public class JavadocListener extends JavadocParserBaseListener {
 
     private TestHeaders context;
     private String subject;
+    private String body;
     public List<BlockTag> blockTags;
 
     public JavadocListener() {
         context = TestHeaders.test;
         subject="";
+        body="";
         blockTags=new ArrayList<>();
     }
 
@@ -32,26 +31,42 @@ public class JavadocListener extends JavadocParserBaseListener {
         if (Arrays.stream(TestHeaders.values()).anyMatch(header->header.toString().equals(ctx.getText()))) {
             context = TestHeaders.valueOf(ctx.getText());
             subject = "";
+        }else{
+            context = null;
         }
+        body = "";
     }
 
     /**
-     * Exit a parse tree produced by {@link JavadocParser#blockTagContents}.
+     * Exit a parse tree produced by {@link JavadocParser#blockTagContent()}.
      *
      * @param ctx the parse tree
      */
     @Override
-    public void exitBlockTagContents(JavadocParser.BlockTagContentsContext ctx) {
-        if (ctx.children.size() > 2)
-            blockTags.add(
-                    new BlockTag(
-                            context,
-                            subject.replaceAll("^([\\n\\s]*)\\*+","$1"),
-                            ctx.getText().split("[\\n\\s]",2)[1]
-                                    .replaceAll("(\\n\\s*)\\*+","$1")
-                                    .replaceAll("^(\\s*)\\*+","$1")
-                    )
-            );
+    public void exitBlockTagContent(JavadocParser.BlockTagContentContext ctx) {
+        if (!(context==null))
+            body += ctx.getText();
+
+    }
+
+    /**
+     * Exit a parse tree produced by {@link JavadocParser#blockTagContent()}.
+     *
+     * @param ctx the parse tree
+     */
+    @Override
+    public void exitBlockTag(JavadocParser.BlockTagContext ctx) {
+        if (!(context==null))
+            if (ctx.children.size() > 2)
+                blockTags.add(
+                        new BlockTag(
+                                context,
+                                subject.replaceAll("^([\\n\\s]*)\\*+","$1"),
+                                body.split("[\\n\\s]",2)[1]
+                                        .replaceAll("(\\n\\s*)\\*+","$1")
+                                        .replaceAll("^(\\s*)\\*+","$1")
+                        )
+                );
     }
 
     /**

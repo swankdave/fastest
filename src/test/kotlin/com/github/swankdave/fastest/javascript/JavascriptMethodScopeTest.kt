@@ -166,7 +166,7 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
                 class JavascriptTestClass{
                 /** 
                  * @test
-                 *   () ("Shor","Test") => "ShorTest" 
+                 *   (a) ("Shor","Test") => "ShorTest" 
                  */
                     myTest(a, b){
                         return a.concat(b);
@@ -176,7 +176,7 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
             )
         ).methodList[0]
         assert(methodScope.tests[0].scopes.containsKey(Constants.CONSTRUCTOR)) { "failed to detect test object constructor" }
-        assert(methodScope.tests[0].scopes[Constants.CONSTRUCTOR].toString().contains("()")) {"incorrect test object constructor detected"}
+        assert(methodScope.tests[0].scopes[Constants.CONSTRUCTOR].toString().contains("(a)")) {"incorrect test object constructor detected"}
     }
 
     fun testDiscoverTestPredicate(){
@@ -290,7 +290,7 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
                 class JavascriptTestClass{
                 /** 
                  * @test
-                 *   ("Shor","Test") => "ShorTest" //custom error message
+                 *   ("Shor","Test") => "ShorTest" ///custom error message
                  */
                     myTest(a, b){
                         return a.concat(b);
@@ -446,7 +446,7 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
+        assert(methodScope.tests[0].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert(!(methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for the test\"")){"incorrect test postamble "}
     }
 
@@ -472,7 +472,7 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.tests[1].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
+        assert(methodScope.tests[0].scopes.containsKey(Constants.POST_TEST)) { "failed to detect test postamble" }
         assert((methodScope.tests[1].scopes[Constants.POST_TEST]).toString().contains("String s = \"This is teardown for another test\"")){"incorrect test postamble "}
     }
 
@@ -496,9 +496,9 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.testFragments.isNotEmpty());
+        assert(methodScope.testFragments.isNotEmpty())
         assert(methodScope.testData.isEmpty())
-        assert(methodScope.testFragments.contains("testfragmentname"));
+        assert(methodScope.testFragments.contains("testfragmentname"))
         TestCase.assertFalse(methodScope.testFragments.contains("notTestFragmentName"))
     }
 
@@ -522,9 +522,201 @@ class JavascriptMethodScopeTest: BasePlatformTestCase()  {
             """.trimIndent()
             )
         ).methodList[0]
-        assert(methodScope.testData.isNotEmpty());
+        assert(methodScope.testData.isNotEmpty())
         assert(methodScope.testFragments.isEmpty())
-        assert(methodScope.testData.contains("testfragmentname"));
+        assert(methodScope.testData.contains("testfragmentname"))
         TestCase.assertFalse(methodScope.testData.contains("notTestFragmentName"))
+    }
+
+
+
+
+    fun testBigRealMethod(){
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java","""
+            class JavaTestClass{
+                /**
+                 * Removes comments from the given text.
+                 *
+                 * @param text the text with comments to be stripped
+                 * @return the text without any comments
+                 *
+                 * @test
+                 * (("text","text ","/*\n*text\n** /\n")SET)=>"text"#tab needs to be accounted for correctly
+                 */
+                stripComments(text){
+                    return text
+                                    .replace(/^\\s*/\\s?\\*+\\s*\\n,"")
+                                    .replace(/\\n?\\s*\\*+\\s?+/[\\s\\n]*${'$'}/,"")
+                                    .split("\n"))
+                            .map(s => {return s.replaceFirst(/^\\s*/?\\*+\\s*/,"").trim()})
+                            .join("\n").trim();
+                }
+            }
+        """.trimIndent())
+        )
+        TestCase.assertEquals(3, classScope.methodList[0].getTests().size)
+    }
+    fun testBigRealMethod2() {
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+            class JavaTestClass{
+                /**
+                 * convenience function that joins the non-empty members of a list of strings with the aforementioned delimiter
+                 * @param delimiter delimiter to use to seperate strings
+                 * @param strings the list of strings to be joined
+                 * @return block of text
+                 *
+                 * @test
+                 * (",",new String[]{"test"}) => "a,test"
+                 */
+                filteredJoin(delimiter, strings){
+                    return Arrays.stream(strings).filter(s => !!s).join("\n"");
+                }
+            }
+        """.trimIndent()
+            )
+        )
+        assertEquals("(\",\",new String[]{\"test\"})", classScope.methodList[0].tests[0].config.predicate)
+    }
+
+    fun testConditionNoInvert() {
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+                class JavaTestClass{
+                /** 
+                 * @test
+                 *   ("Shor","Test") => "ShorTest" 
+                 */
+                    myTest(a, b){
+                        return a +b;
+                    }
+                }
+        """.trimIndent()
+            )
+        )
+        assertFalse(classScope.methodList[0].tests[0].config.isInverted)
+    }
+    fun testConditionInvert(){
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java","""
+                class JavaTestClass{
+                /** 
+                 * @test
+                 *   ("Shor","Test") !=> "ShorTest" 
+                 */
+                    myTest(a, b){
+                        return a+b;
+                    }
+                }
+        """.trimIndent())
+        )
+        assert(classScope.methodList[0].tests[0].config.isInverted)
+    }
+    fun testConditionUnInvert(){
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java","""
+                class JavaTestClass{
+                /** 
+                 * @test
+                 *   ("Shor","Test") !=> "ShorTest" 
+                 *   ("Shor","Test")  => "ShorTest" 
+                 */
+                    myTest(a, b){
+                        return a+b;
+                    }
+                }
+        """.trimIndent())
+        )
+        assert(classScope.methodList[0].tests[0].config.isInverted)
+        assertFalse(classScope.methodList[0].tests[1].config.isInverted)
+    }
+
+    fun testJustCallIt(){
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java","""
+                class JavaTestClass{
+                /** 
+                 * @test
+                 *   ("Shor","Test")
+                 */
+                    myTest(a, b){
+                        return a + b;
+                    }
+                }
+        """.trimIndent())
+        )
+        assert(classScope.methodList[0].tests.size>0)
+    }
+    fun testMoreSetTroubleAndComments() {
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+                class JavaTestClass{
+                /** 
+                 * @test
+                 * //i want this to be ignored
+                 *   ( (4,5)SETA,2 ) !=> (9,10)SETB
+                 */
+                    myTest(a, b){
+                        return a + b;
+                    }
+                }
+        """.trimIndent()
+            ))
+        assert(classScope.methodList[0].tests.size==4)
+        assert(!classScope.methodList[0].tests[0].config.preamble.contains("ignored"))
+    }
+
+    fun testHasParameterSet(){
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+                class JavaTestClass{
+                    /** 
+                    * @test
+                    * parameterset : { thing : otherthing, also:stuff and stuff }
+                    * {thing3:thing4}
+                    * (a,b)=>c
+                    **/
+                    myTest(){} 
+                }
+            """.trimIndent()
+            )
+        )
+        assertEquals(2, classScope.methodList[0].listener.parameterSets.size)
+        val set1: Map<String, String> = classScope.methodList[0].listener.parameterSets["parameterset"]!!
+        assertNotNull(set1)
+        TestCase.assertEquals(2, set1.size)
+        TestCase.assertEquals("otherthing", set1.getValue("thing"))
+        TestCase.assertEquals("stuff and stuff", set1.getValue("also").trim())
+        val set2: Map<String, String> = classScope.methodList[0].listener.parameterSets["_parameter_1"]!!
+        assertNotNull(set2)
+        TestCase.assertEquals(1, set2.size)
+        TestCase.assertEquals("thing4",set2.getValue("thing3"))
+    }
+    fun testFakeSetKeyword() {
+        val classScope = JavaClassScope(
+            super.myFixture.addFileToProject(
+                "src/JavaTestClass.java", """
+                class JavaTestClass{
+                /** 
+                 * @test
+                 * ( (4,5)SET,2 ) => (6,7)SET
+                 * //u ("SET" above)m
+                 */
+                    myTest(a, b){
+                        return a+b;
+                    }
+                }
+        """.trimIndent()
+            ))
+        assert(classScope.methodList[0].tests.size==2)
     }
 }

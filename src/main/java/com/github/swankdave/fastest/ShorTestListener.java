@@ -2,6 +2,7 @@ package com.github.swankdave.fastest;
 
 import com.github.swankdave.fastest.parser.ShorTestBaseListener;
 import com.github.swankdave.fastest.parser.ShorTestParser;
+import javaslang.Tuple2;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -19,6 +20,12 @@ public class ShorTestListener extends ShorTestBaseListener {
     private final MethodScope methodScope;
     private TestConfig config;
     private boolean postTest = false;
+    private final List<String> parameterSetNameList; //needed because we need to know the order in which they were declared
+    private final Map<String,Map<String,String>> parameterSets;
+    private String currentParametersetName;
+    private Map<String,String> currentParameterset;
+    private boolean divertRulesToParameterSet = false;
+    private List<TestConfig> divertedRules = new ArrayList<>();
 
     //HashMap<SetIdentifier, HashMap<FullSetCommand,List<SetMember>>>
     //example:
@@ -35,11 +42,14 @@ public class ShorTestListener extends ShorTestBaseListener {
      */
     private boolean UsingDefaultPreamble = true;
 
+    public Map<String, Map<String, String>> getParameterSets() {
+        return parameterSets;
+    }
+
     private String getFUllText(ParserRuleContext ctx){
         if (ctx.start == null || ctx.stop == null || ctx.start.getStartIndex() < 0 || ctx.stop.getStopIndex() < 0)
             return ctx.getText(); // Fallback
         return ctx.start.getInputStream().getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
-
     }
 
     /**
@@ -54,6 +64,10 @@ public class ShorTestListener extends ShorTestBaseListener {
         config = new TestConfig(methodScope);
         testList = new ArrayList<>();
         ActiveSets = new HashMap<>();
+        parameterSetNameList = new ArrayList<>();
+        parameterSets = new HashMap<>();
+        currentParametersetName = "";
+        currentParameterset = new HashMap<>();
     }
 
     /**
@@ -98,7 +112,7 @@ public class ShorTestListener extends ShorTestBaseListener {
             config.setPreamble(Util.getDeclarationFromDefinition(
                     ARTICLE_NAME,
                     classScope.languageConfig.getNewValueKeyword()+ " " +
-                            classScope.getClassName() + (config.getConstructor().isBlank() ? "()" : config.getConstructor()), classScope.languageConfig));
+                            classScope.getClassName().trim() + (config.getConstructor().isBlank() ? "()" : config.getConstructor()), classScope.languageConfig));
         }
 
         // every expansion introduces the possibility of more references, so whenever we find a keyword,
@@ -161,7 +175,6 @@ public class ShorTestListener extends ShorTestBaseListener {
 
             //foreach map identifier (SET, SETA, SETB...)
             for (Map.Entry<String, Map<String, List<String>>> entry : ActiveSetsCopy.entrySet()) {
-                String setId = entry.getKey();
                 //list of set groups, consisting of the literal text of the set declaration, and a list of the set members/parameters broken up
                 Map<String, List<String>> setGroup = entry.getValue();
                 //for every defined test. (sets multiply tests)
@@ -193,7 +206,11 @@ public class ShorTestListener extends ShorTestBaseListener {
                 }).collect(Collectors.toList());
             }
         }
-        testList.addAll(tests.stream().map(TestInstance::new).toList());
+        if (divertRulesToParameterSet)
+            divertedRules.addAll(tests);
+        else
+            testList.addAll(tests.stream().map(TestInstance::new).toList());
+        ActiveSets.clear();
         config.invalidateTest();
         preCode=true; //reset our code reading context
     }
@@ -221,6 +238,7 @@ public class ShorTestListener extends ShorTestBaseListener {
 
         return testList;
     }
+
     /**
      * Exit a parse tree produced by {@link ShorTestParser#start}.
      *
@@ -239,7 +257,7 @@ public class ShorTestListener extends ShorTestBaseListener {
      */
     @Override
     public void enterSetup(ShorTestParser.SetupContext ctx) {
-        if (preCode && (getFUllText(ctx).trim().startsWith("#"))||getFUllText(ctx).trim().startsWith("//")){
+        if (preCode && (getFUllText(ctx).trim().startsWith(classScope.languageConfig.getCommentString()))){
             if (!config.getTestDoc().isBlank())
                 config.setTestDoc(config.getTestDoc() + "\n");
             config.setTestDoc(config.getTestDoc() + getFUllText(ctx));
@@ -276,7 +294,8 @@ public class ShorTestListener extends ShorTestBaseListener {
      */
     @Override
     public void exitRule(ShorTestParser.RuleContext ctx) {
-         this.postTest = true;
+        this.postTest = true;
+        this.preCode = false;
     }
 
     /**
@@ -339,17 +358,7 @@ public class ShorTestListener extends ShorTestBaseListener {
      */
     @Override
     public void enterError_text(ShorTestParser.Error_textContext ctx) {
-        config.setError(ctx.anything_but_newline().stream().map(this::getFUllText).collect(Collectors.joining("")));
-    }
-
-    private String getSetId(String keyword){
-        if (keyword.length()==3|keyword.length()==7)
-            return "default";
-        if (keyword.length()==4)
-            return keyword.substring(3);
-        if (keyword.length()==8)
-            return keyword.substring(7);
-        throw new RuntimeException("Unknown set generator:" + keyword);
+        config.setError(ctx.getText());
     }
 
     /**
@@ -362,19 +371,17 @@ public class ShorTestListener extends ShorTestBaseListener {
         config.containsSet = true;
         if (ctx.set_keyword().SET_KEYWORD().getSymbol().getType() == ShorTestParser.SET_KEYWORD)
         {
-            ShorTestParser.ParameterListContext mapMembers = ctx.ballanced_parenthesis_statement().parameterList();
+            var mapMembers = ctx.parameterList().statement();
+            if (!ActiveSets.containsKey(getFUllText(ctx.set_keyword())))
+                ActiveSets.put(getFUllText(ctx.set_keyword()),new HashMap<>());
+            var map = ActiveSets.get(getFUllText(ctx.set_keyword()));
             String setDefinition = getFUllText(ctx);
-            var mapIdentifier = getSetId(getFUllText(ctx.set_keyword()));
-            if (!ActiveSets.containsKey(mapIdentifier))
-                ActiveSets.put(mapIdentifier,new HashMap<>());
-            var map = ActiveSets.get(mapIdentifier);
             if (!map.containsKey(setDefinition))
                 map.put(setDefinition,new ArrayList<>());
             var list = map.get(setDefinition);
             list.clear();
-            list.addAll(mapMembers.statement().stream().map(this::getFUllText).toList());
+            list.addAll(mapMembers.stream().map(this::getFUllText).toList());
         }
-
     }
 
     /**
@@ -385,7 +392,7 @@ public class ShorTestListener extends ShorTestBaseListener {
     @Override
     public void enterException_method_statement(ShorTestParser.Exception_method_statementContext ctx) {
         config.isException = true;
-        config.setResult(getFUllText(ctx.ballanced_parenthesis_statement().parameterList()));
+        config.setResult(getFUllText(ctx.programming_contents()));
     }
 
     /**
@@ -415,6 +422,153 @@ public class ShorTestListener extends ShorTestBaseListener {
         config.invalidatePreTest();
         config = new TestConfig(methodScope);
         postTest = false;
+    }
+
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation does nothing.</p>
+     *
+     * @param ctx
+     */
+    @Override
+    public void enterParameter_set(ShorTestParser.Parameter_setContext ctx) {
+        var identifier = ctx.getChild(ShorTestParser.IdentifierContext.class,0);
+        if (identifier == null)
+            currentParametersetName = "_parameter_"+parameterSets.size();
+        else
+            currentParametersetName = identifier.getText();
+        if (!(parameterSets.containsKey(currentParametersetName)))
+            parameterSets.put(currentParametersetName,new HashMap<>());
+        currentParameterset = parameterSets.get(currentParametersetName);
+        if (!parameterSetNameList.contains(currentParametersetName))
+            parameterSetNameList.add(currentParametersetName);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation does nothing.</p>
+     *
+     * @param ctx
+     */
+    @Override
+    public void enterTruth_list(ShorTestParser.Truth_listContext ctx) {
+        divertRulesToParameterSet = true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation does nothing.</p>
+     *
+     * @param ctx
+     */
+    @Override
+    public void exitTruth_list(ShorTestParser.Truth_listContext ctx) {
+        addTestToList();
+        List<Tuple2<TestConfig, List<String>>> testsAndPredicates = getTestsAndPredicates(parameterSetNameList, parameterSets, divertedRules);
+
+        testsAndPredicates.forEach(testAndPredicate ->
+                testAndPredicate._2.forEach(predicate -> {
+            var test = new TestConfig(testAndPredicate._1);
+            test.setPredicate(predicate);
+            testList.add(new TestInstance(test));
+        }));
+        divertedRules = new LinkedList<>();
+        divertRulesToParameterSet = false;
+    }
+
+    public static @NotNull List<Tuple2<TestConfig, List<String>>> getTestsAndPredicates(
+            List<String> parameterSetNameList,
+            Map<String, Map<String, String>> parameterSets,
+            List<TestConfig> divertedRules) {
+
+        List<List<String>> potentialMethodCalls = new ArrayList<>(); // a rolled out list of all parameter sets possible within the specified parametersets
+        // a list of method calls, consisting of lists of parameter value names
+        potentialMethodCalls.add(new ArrayList<>());
+        for (var name : parameterSetNameList) {
+            List<List<String>> newList= new ArrayList<>();
+            for (var methodCall : potentialMethodCalls)
+                for (var value : parameterSets.get(name).keySet()){
+                    var newCall = new ArrayList<>(methodCall);
+                    newCall.add(value);
+                    newList.add(newCall);
+                }
+            potentialMethodCalls = newList;
+        }
+
+        Map<TestConfig, String> postPreAmbles = new HashMap<>();
+        List<Tuple2<TestConfig, List<List<String>>>> callingMaps = new LinkedList<>(); //test predicates, by test, where each parameter is a list of legal named values for each parameter in call
+        //A testConfig and a list of parameters, each consisting of a list of legal value names for that parameter for this rule
+        for (var test: divertedRules) {
+            List<List<String>> callList = new LinkedList<>();
+            var broken = Util.breakRangeParameters(test.getPredicate().trim());
+            postPreAmbles.put(test, broken._2);
+            var params = broken._1;
+            for (int i = 0; i < params.size(); i++)
+                callList.add(Util.getSublistFromParameter(params.get(i), parameterSets.get(parameterSetNameList.get(i)).keySet().stream().toList()));
+            callingMaps.add(new Tuple2<>(test, callList));
+        }
+
+        List<Tuple2<TestConfig, List<List<String>>>> methodCalls = new LinkedList<>(); //rolled out calls and the first rule they match
+        //a TestConfig and a list of method calls, consisting of lists of parameter value names
+        //for each test config
+        for (var map: callingMaps){
+            var calls = new Tuple2<TestConfig, List<List<String>>>(map._1, new ArrayList<>());
+            List<List<String>> takenCalls = new LinkedList<>();
+            //for each remaining function call from the lis of all possible calls to the function under test
+            for (var call: potentialMethodCalls){
+                var keep = true;
+                //for each parameter in that call,
+                for (int i=0; i<map._2.size(); i++)
+                    keep = keep && (map._2.get(i).contains(call.get(i)));
+                if (keep) {
+                    calls._2.add(call);
+                    takenCalls.add(call);
+                }
+            }
+            //remove the calls this rule took, so that subsequent rules can't use it
+            potentialMethodCalls.removeAll(takenCalls);
+            methodCalls.add(calls);
+        }
+
+        List<Tuple2<TestConfig, List<String>>> testsAndPredicates = new LinkedList<>(); //a testConfig and a list of predicates to use in copies of testConfig
+        for (var testConfig: methodCalls) {
+            List<String> testPredicates = new ArrayList<>();
+            for (var call : testConfig._2) {
+                var predicate = new StringBuilder();
+                for (int i = 0; i < call.size(); i++)
+                    predicate.append(", ").append(parameterSets.get(parameterSetNameList.get(i)).get(call.get(i)));
+                testPredicates.add("("+predicate.substring(2)+")"+postPreAmbles.get(testConfig._1));
+            }
+            testsAndPredicates.add(new Tuple2<>(testConfig._1, testPredicates));
+        }
+        return testsAndPredicates;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>The default implementation does nothing.</p>
+     *
+     * @param ctx
+     */
+    @Override
+    public void enterKey_value_pair(ShorTestParser.Key_value_pairContext ctx) {
+        if (ctx.parent != null && ctx.parent.parent != null)
+            if (ctx.parent.parent instanceof ShorTestParser.Parameter_setContext){
+                var identifier = ctx.getChild(ShorTestParser.IdentifierContext.class,0);
+                var statement = ctx.getChild(ShorTestParser.StatementContext.class,0);
+                if (identifier != null && statement != null)
+                    currentParameterset.put(identifier.getText(),statement.getText());
+                //else
+                    //throw new ParseException("Malformed Key Par as part of parameter set: "+currentParametersetName, -1  );
+            }
+
     }
 
     /**

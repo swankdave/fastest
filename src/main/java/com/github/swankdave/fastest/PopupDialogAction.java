@@ -20,6 +20,8 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.codeStyle.CodeStyleManager;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -90,50 +92,69 @@ public class PopupDialogAction extends AnAction {
             default -> throw new RuntimeException("I don't know what to do with this file yet");
           };
 
+        AtomicReference<VirtualFile> vTestDir = new AtomicReference<>(file.getParent().findChild(Constants.TEST_NAMESPACE));
+        if (vTestDir.get() == null)
+          ApplicationManager.getApplication().runWriteAction(() -> {
+            try {
+              vTestDir.set(file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE));
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
+        AtomicReference<VirtualFile> vTestFile = new AtomicReference<>(vTestDir.get().findChild(testFileName));
+        
+        if (vTestFile.get() == null)
+          ApplicationManager.getApplication().runWriteAction(() -> {
+            try {
+              vTestFile.set(vTestDir.get().createChildData(this, testFileName));
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
+        PsiFile pTestFile = PsiManager.getInstance(project).findFile(vTestFile.get());
+        var testDocument = PsiDocumentManager.getInstance(project)
+                .getDocument(Objects.requireNonNull(pTestFile));
+
         try (InputStream resourceAsStream =
                      getClass().getClassLoader().getResourceAsStream(classScope.languageConfig.getMustacheTemplateFilenameForLanguage())) {
           assert resourceAsStream != null : "failed to load template file";
 
-          AtomicReference<VirtualFile> vTestDir = new AtomicReference<>(file.getParent().findChild(Constants.TEST_NAMESPACE));
-          if (vTestDir.get() == null)
-            ApplicationManager.getApplication().runWriteAction(() -> {
-                try {
-                    vTestDir.set(file.getParent().createChildDirectory(this, Constants.TEST_NAMESPACE));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-          AtomicReference<VirtualFile> vTestFile = new AtomicReference<>(vTestDir.get().findChild(testFileName));
 
-          if (vTestFile.get() == null)
-            ApplicationManager.getApplication().runWriteAction(() -> {
-              try {
-                vTestFile.set(vTestDir.get().createChildData(this, testFileName));
-              } catch (IOException e) {
-                throw new RuntimeException(e);
+            try (StringWriter writer = new StringWriter()) {
+              if (classScope.languageConfig.getMustacheTemplateFilenameForLanguage().endsWith("mustache"))
+                new DefaultMustacheFactory()
+                        .compile(new InputStreamReader(resourceAsStream), "root")
+                        .execute(writer, classScope.getScopes());
+              else if (classScope.languageConfig.getMustacheTemplateFilenameForLanguage().endsWith(".vtl")) {
+                VelocityEngine velocityEngine = new VelocityEngine();
+                velocityEngine.init();
+
+                VelocityContext context = new VelocityContext();
+                classScope.getScopes().forEach(context::put);
+
+                InputStreamReader inputStreamReader = new InputStreamReader(resourceAsStream);
+                velocityEngine.evaluate(context, writer, "ERROR", inputStreamReader);
               }
-            });
-          PsiFile pTestFile = PsiManager.getInstance(project).findFile(vTestFile.get());
-          var testDocument = PsiDocumentManager.getInstance(project)
-                  .getDocument(Objects.requireNonNull(pTestFile));
 
-          try (StringWriter writer = new StringWriter()) {
-            new DefaultMustacheFactory()
-                    .compile(new InputStreamReader(resourceAsStream), "root")
-                    .execute(writer, classScope.getScopes());
-              WriteCommandAction.runWriteCommandAction(project, "Generate Test Code", "", () -> {
-                Objects.requireNonNull(testDocument).setReadOnly(false);
-                testDocument.setText(writer.toString());
-                PsiDocumentManager.getInstance(project).commitDocument(testDocument);
-                CodeStyleManager.getInstance(project).reformat(pTestFile, true);
-              }, pTestFile);
-          }
+                WriteCommandAction.runWriteCommandAction(project, "Generate Test Code", "", () -> {
+                  Objects.requireNonNull(testDocument).setReadOnly(false);
+                  testDocument.setText(writer.toString());
+                  PsiDocumentManager.getInstance(project).commitDocument(testDocument);
+                  CodeStyleManager.getInstance(project).reformat(pTestFile, true);
+                }, pTestFile);
+            } catch (Exception e) {
+              System.out.println(e.getMessage());
+              e.printStackTrace();
+              throw new RuntimeException(e);
+            }
 
-          fileEditorManager.openFile(vTestFile.get(), true);
+
+            fileEditorManager.openFile(vTestFile.get(), true);
         } catch (IOException e) {
           Project currentProject = event.getProject();
           Messages.showMessageDialog(currentProject, e.getMessage(), "Oops", Messages.getErrorIcon());
         }
+
       }
     }
   }

@@ -92,14 +92,12 @@ tagSection
     ;
 
 blockTag
-    : SPACE? AT blockTagName  (SPACE? blockTagContents)?
+    : SPACE? AT blockTagName SPACE? blockTagContent*
     ;
 
 blockTagName
     : NAME
     ;
-blockTagContents
-    : blockTagContent*;
 
 blockTagContent
     : blockTagText
