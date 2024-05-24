@@ -1,55 +1,14 @@
 package com.github.swankdave.fastest;
 
-import com.intellij.lang.ASTNode;
 import javaslang.Tuple2;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import org.jetbrains.annotations.NotNull;
-
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Util {
-
-    /**
-     *
-     * @return
-     * @param docBlockFragments
-     */
-    public static String getNamedFragment(
-            TestHeaders FragmentType,
-            String FragmentName,
-            List<ASTNode> docBlockFragments,
-            LanguageConfig language){
-        StringBuilder rtn = new StringBuilder();
-        boolean foundTarget = false;
-        LinkedList<ASTNode> fragments = new LinkedList<>(docBlockFragments);
-        Collections.reverse(fragments);
-        while (!fragments.isEmpty()) {
-            var node = fragments.removeLast();
-            foundTarget = foundTarget || language.isDocTagWithName(FragmentType, FragmentName, node);
-
-            //replace each tree node with its children so we can filter out DOC_COMMENT_LEADING_ASTERISKS
-            var children = new LinkedList<>(Arrays.stream(node.getChildren(null)).toList());
-            Collections.reverse(children);
-            if (!children.isEmpty()) {
-                fragments.addAll(children);
-                continue;
-            }
-
-            if(!foundTarget)
-                continue;
-
-            //filter out comment characters
-            if (Arrays.stream(language.getDocBlockTokens()).noneMatch(t->t.equals(node.getElementType())))
-                rtn.append(node.getText());
-
-            //bail when we find the next tag
-            if (language.isDocTag(FragmentType, node.getTreeNext()))
-                break;
-
-        }
-        return rtn.toString();
-    }
 
     /**
      * Returns the minimum indent level of the given input block.
@@ -108,6 +67,14 @@ public class Util {
         return text;
     }
 
+    /**
+     * Returns the declaration statement from the definition of a variable.
+     *
+     * @param name           the name of the variable
+     * @param value          the value assigned to the variable
+     * @param languageConfig the configuration of the programming language
+     * @return the declaration statement
+     */
     public static @NotNull String getDeclarationFromDefinition(String name, String value, LanguageConfig languageConfig) {
         return String.join(" ", new String[]{
                 " ".repeat(languageConfig.getDefaultIndent()-1),
@@ -118,6 +85,13 @@ public class Util {
                 "\n"});
     }
 
+    /**
+     * Returns a rolled out list of the given parameter values based on the given statement.
+     *
+     * @param statement   the statement used to filter the parameters
+     * @param parameters  the list of parameters to filter
+     * @return a sublist of parameters that match the statement
+     */
     public static List<String> getSublistFromParameter(String statement, List<String> parameters) {
         var rtn = new ArrayList<String>();
         if (statement.trim().equals("*"))
@@ -174,6 +148,13 @@ public class Util {
         return rtn;
     }
 
+    /**
+     * Breaks a range parameter statement into individual parameters and returns them as a list.
+     * Also returns the remaining part of the statement after the parameters have been extracted.
+     *
+     * @param statement the range parameter statement to be broken down
+     * @return a tuple containing the list of parameters and the remaining part of the statement
+     */
     public static Tuple2<List<String>, String>breakRangeParameters(String statement){
         List<String> rtn = new ArrayList<>();
         StringBuilder currentParameter = new StringBuilder();
@@ -211,5 +192,11 @@ public class Util {
         }
         rtn.add(currentParameter.toString());
         return new Tuple2<>(rtn, statement);
+    }
+
+    static String getFUllText(ParserRuleContext ctx){
+        if (ctx.start == null || ctx.stop == null || ctx.start.getStartIndex() < 0 || ctx.stop.getStopIndex() < 0)
+            return ctx.getText(); // Fallback
+        return ctx.start.getInputStream().getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
     }
 }

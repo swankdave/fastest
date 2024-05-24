@@ -1,6 +1,10 @@
 package com.github.swankdave.fastest;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
+
+import static com.github.swankdave.fastest.Constants.ARTICLE_NAME;
 
 /**
  * The TestConfig class represents a configuration for a test.
@@ -8,7 +12,6 @@ import java.util.*;
 public class TestConfig {
 
     private final MethodScope methodScope;
-
     public enum TestSections {
         testDoc,
         preamble,
@@ -24,6 +27,14 @@ public class TestConfig {
     public boolean isInverted;
     public Integer testIndex;
     public boolean containsSet;
+    /**
+     * Indicates whether the default preamble is being used.
+     *
+     * The default preamble is constructors for datafragments and the article under test (if the function isn't static).
+     * This variable determines whether the default preamble should be used or not.
+     */
+    public boolean UsingDefaultPreamble = true;
+
     private final Map<TestSections, List<String>> testPartReferenceMap = new HashMap<>();
     private final Map<TestSections, String> testPartMap = new HashMap<>();
 
@@ -99,7 +110,6 @@ public class TestConfig {
     public void setTestDoc(String testDoc) {
         testPartMap.put(TestSections.testDoc, testDoc);
     }
-
 
     public TestConfig(MethodScope methodScope) {
         this.methodScope = methodScope;
@@ -231,6 +241,13 @@ public class TestConfig {
     }
 
 
+    /**
+     * Adds a declaration to the specified test section in the test configuration.
+     *
+     * @param testSection  the test section where the declaration will be added
+     * @param name         the name of the section to be expanded
+     * @param declaration  the declaration to be added
+     */
     private void addDeclaration(TestSections testSection, String name, String declaration) {
         String declarationRegex = "\n\\s*" + name + "\\s*(" + methodScope.languageConfig.getLineterminationKeyword() + ")?\\s*\n?";
         if ( testPartMap.get(testSection).matches(declarationRegex))
@@ -241,9 +258,96 @@ public class TestConfig {
 
 
 
+    /**
+     * Formats the test configuration using the provided language configuration.
+     * Sets the test documentation and preamble with the formatted values.
+     *
+     * @param languageConfig The LanguageConfig object representing the language configuration.
+     */
     public void format(LanguageConfig languageConfig) {
-        //setTestDoc(Arrays.stream(getTestDoc().split("\n")).map(s -> " ".repeat(languageConfig.getDefaultIndent()) + s.trim()).collect(Collectors.joining("\n")));
         setTestDoc(Util.setMindent(getTestDoc(), languageConfig.getDefaultIndent() ));
         setPreamble(Util.setMindent(getPreamble(), 2*languageConfig.getDefaultIndent()));
+    }
+
+
+    /**
+     * Expands the test sections in the TestConfig with the specified set literals and replaces them with the given values.
+     *
+     * @param classScope  The ClassScope object representing the scope of the class in the test document.
+     */
+    void expandTestWithFragments(ClassScope classScope) {
+        // every expansion introduces the possibility of more references, so whenever we find a keyword,
+        // we need to restart our search for keywords in the proper precedent ordering, so we keep expanding
+        // references, and starting over in precedence search
+        while (true) {
+            if (methodScope.getTestFragments().keySet().stream().anyMatch(this::containsKeyword)) {
+                methodScope.getTestFragments().forEach(this::expandKeyword);
+                continue; //because method fragments can refer to each-other, we need to do this until it has no effect
+            }
+
+            if (methodScope.getTestData().keySet().stream().anyMatch(this::containsKeyword)) {
+                methodScope.getTestData().forEach(this::dataExpand);
+                continue;
+            }
+
+            if (classScope.getTestFragments().keySet().stream().anyMatch(this::containsKeyword)) {
+                classScope.getTestFragments().forEach(this::expandKeyword);
+                continue;
+            }
+
+            if (classScope.getTestData().keySet().stream().anyMatch(this::containsKeyword)) {
+                classScope.getTestData().forEach(this::dataExpand);
+                continue;
+            }
+            break;
+        }
+    }
+
+    /**
+     * Expands the test sections in the TestConfig with the specified set literals and replaces them with the given values.
+     *
+     * @param setGroup The set group containing the set literals and their corresponding values.
+     * @return The expanded list of TestConfig objects.
+     */
+    @NotNull List<TestConfig> expandTestWithSets(Map<String, List<String>> setGroup) {
+        var rtn = new LinkedList<TestConfig>();
+        //get the list of sets (under the current set identifier) that exist in the current test,
+        // by looking for each litteral definition of that set
+        //set litteral: (1,2,3)SETA
+        var setLiterals = (setGroup.keySet().stream().filter(this::containsLiteral)).toList();
+        //if we found any full text set definitions
+        if (!setLiterals.isEmpty()) {
+            //for each member of the first set for this set litteral
+            //for set litteral (1,2,3)SETA, the members are 1, 2 and 3, which will be substituted, in the text, for (1,2,3)SETA
+            for (int i = 0; i < setGroup.get(setLiterals.get(0)).size(); i++) {
+                //copy the current test
+                var newTest = new TestConfig(this);
+                //java doesn't like handing iteration variables directly to lambda's for some reason
+                int finalI = i;
+                //replace full text definition of all set literals with the fully expanded set value corresponding to the current set item index
+                setLiterals.forEach(literal -> newTest.expandLiteral(literal, setGroup.get(literal).get(finalI)));
+                //add new test to list of tests to be returned and flattened by flatmap
+                rtn.add(newTest);
+            }
+        } else
+            //this test does not need set expansion
+            rtn.add(this);
+        return rtn;
+    }
+
+    /**
+     * Sets the default preamble for the configuration. It sets the flag UsingDefaultPreamble to true and
+     * updates the preamble of the config by generating it based on the given ARTICLE_NAME, classScope,
+     * and languageConfig. The preamble is generated by calling Util.getDeclarationFromDefinition
+     * method with the appropriate parameters.
+     *
+     * @param classScope
+     */
+    void applyDefaultPreamble(ClassScope classScope) {
+        UsingDefaultPreamble = true;
+        setPreamble(Util.getDeclarationFromDefinition(
+                ARTICLE_NAME,
+                classScope.languageConfig.getNewValueKeyword()+ " " +
+                        classScope.getClassName().trim() + (getConstructor().isBlank() ? "()" : getConstructor()), classScope.languageConfig));
     }
 }
