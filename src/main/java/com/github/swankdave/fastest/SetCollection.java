@@ -63,6 +63,7 @@ public class SetCollection extends HashMap<String, HashMap<String, List<String>>
      *
      * @return a deep clone of the SetCollection object.
      */
+    @Override
     @NotNull
     public SetCollection clone() {
         return new SetCollection(entrySet().stream().collect(

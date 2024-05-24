@@ -91,7 +91,7 @@ public class ShorTestListener extends ShorTestBaseListener {
 
     /**
      * Retrieves the list of test instances.
-     *
+     * <p>
      * This method iterates through each test instance in the testList, and performs
      * operations that involve the test configuration such as setting the test index
      * and incrementing the test name count. The modified test instances are then

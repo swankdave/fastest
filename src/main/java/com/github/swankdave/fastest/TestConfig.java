@@ -29,7 +29,7 @@ public class TestConfig {
     public boolean containsSet;
     /**
      * Indicates whether the default preamble is being used.
-     *
+     * <p>
      * The default preamble is constructors for datafragments and the article under test (if the function isn't static).
      * This variable determines whether the default preamble should be used or not.
      */
@@ -126,6 +126,7 @@ public class TestConfig {
         isException = config.isException;
         containsSet = config.containsSet;
         isInverted = config.isInverted;
+        UsingDefaultPreamble = config.UsingDefaultPreamble;
         setTestDoc(config.getTestDoc());
         Arrays.stream(TestSections.values()).forEach(section -> testPartMap.put(section, config.testPartMap.get(section)));
         Arrays.stream(TestSections.values()).forEach(section -> testPartReferenceMap.put(section, config.testPartReferenceMap.get(section)));
