@@ -6,6 +6,7 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.swankdave.fastest.java.JavaClassScope;
 import com.github.swankdave.fastest.javascript.JavascriptClassScope;
 import com.github.swankdave.fastest.kotlin.KotlinClassScope;
+import com.github.swankdave.fastest.python.PythonClassScope;
 import com.github.swankdave.fastest.typescript.TypescriptClassScope;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -89,6 +90,7 @@ public class PopupDialogAction extends AnAction {
             case "Kotlin" -> new KotlinClassScope(psiFile);
             case "JavaScript" -> new JavascriptClassScope(psiFile);
             case "TypeScript" -> new TypescriptClassScope(psiFile);
+            case "Python" -> new PythonClassScope(psiFile);
             default -> throw new RuntimeException("I don't know what to do with this file yet");
           };
 
