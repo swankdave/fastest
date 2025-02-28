@@ -1,8 +1,8 @@
 # FastTest
 # A Condensed Test Specification Nomenclature
-
+<!-- Plugin description -->
 FasTest (Fast Test) is a [cross-language/framework](#cross-language/framework) tool created to enable developers and testers to specify the parts of tests that are distinct, and meaningful, thereby reduce both the time to create tests, and the time to maintain them. FastTest also has the benefit of doubling as documentation for how methods are used.
-
+<!-- Plugin description end -->
 FasTest is built around ==3?== principals:
 - Simple tests should be simple to write
 - Complicated test cases should be easier to understand
