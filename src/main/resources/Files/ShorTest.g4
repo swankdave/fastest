@@ -1,7 +1,7 @@
 grammar ShorTest;     // The name of the grammar is ShorTest
 
 start
-    : ws* ( WS* (parameter_set|truth_list|rule|comment|setup) (rule_seperator|EOF))+ EOF;
+    : ws* ( WS* (parameter_set|truth_list|rule|comment|setup) WS* comment? WS* (rule_seperator|EOF))+ EOF;
 
 comment
     : COMMENTTOKEN everything_until_newline ;
