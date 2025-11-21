@@ -485,12 +485,12 @@ class addclass{
 
   @Test 
   function add_test_2() {
-      assertEquals(2,addclass.add(2,3));
+      assertNotEquals(2,addclass.add(2,2));
   }
 	
   @Test  
   function add_test_3() {  
-    assertEquals(2,addclass.add(3,3));
+    assertNotEquals(2,addclass.add(3,2));
   }
 }
 ```
