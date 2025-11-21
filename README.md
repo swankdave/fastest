@@ -523,7 +523,7 @@ However, different set specifiers operate on separate schedules, leading to a fu
 class addclass{
   /**
   * @test
-  * ((1,2,3)SETA,(10,20,30)) !=> (3,4,5)SETA
+  * ((1,2,3)SETA,(10,20,30)SETB) !=> (3,4,5)SETA
   **/
   static function add(a,b){ ... }
 }
